@@ -1,3 +1,3 @@
-# Brogramers-CSCI150-Project
+# Brogrammers-CSCI150-Project
 Semester long Project
 
