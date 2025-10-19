@@ -11,7 +11,10 @@ app.use(express.json());
 // Test route
 app.get('/api/test', async (req, res) => {
   const users = await prisma.user.findMany();
-  res.json(users);
+  res.json({
+    message: 'Backend is working!',
+    users: users,
+  })
 });
 
 const PORT = process.env.PORT || 5000;
