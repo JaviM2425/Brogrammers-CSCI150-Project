@@ -4,7 +4,7 @@ import axios from 'axios';
 // for iOS simulator use "http://localhost:5000/api"
 // for physical devices, "http://<your-computer-ip>:5000/api"
 const api = axios.create({
-    baseURL: 'http://10.0.0.27:5000/api',
+    baseURL: process.env.EXPO_PUBLIC_API_URL,
 });
 
 export default api;

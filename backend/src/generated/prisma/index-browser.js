@@ -121,10 +121,53 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
 });
 
 exports.Prisma.UserScalarFieldEnum = {
-  id: 'id',
+  userID: 'userID',
   username: 'username',
   password: 'password',
+  height: 'height',
+  weight: 'weight',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.WeightLogScalarFieldEnum = {
+  logID: 'logID',
+  date: 'date',
+  weight: 'weight',
+  userID: 'userID'
+};
+
+exports.Prisma.WorkoutLogScalarFieldEnum = {
+  logID: 'logID',
+  planName: 'planName',
+  exerciseName: 'exerciseName',
+  sets: 'sets',
+  reps: 'reps',
+  weight: 'weight',
+  date: 'date',
+  userID: 'userID'
+};
+
+exports.Prisma.StepRecordScalarFieldEnum = {
+  recordID: 'recordID',
+  stepsCount: 'stepsCount',
+  distance: 'distance',
+  calories: 'calories',
+  date: 'date',
+  userID: 'userID'
+};
+
+exports.Prisma.WorkoutRecommendationScalarFieldEnum = {
+  recommendationID: 'recommendationID',
+  planName: 'planName',
+  workoutType: 'workoutType',
+  description: 'description'
+};
+
+exports.Prisma.FitHealthTipAPIScalarFieldEnum = {
+  id: 'id',
+  APIName: 'APIName',
+  connected: 'connected',
+  lastChecked: 'lastChecked'
 };
 
 exports.Prisma.SortOrder = {
@@ -137,9 +180,19 @@ exports.Prisma.QueryMode = {
   insensitive: 'insensitive'
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
-  User: 'User'
+  User: 'User',
+  WeightLog: 'WeightLog',
+  WorkoutLog: 'WorkoutLog',
+  StepRecord: 'StepRecord',
+  WorkoutRecommendation: 'WorkoutRecommendation',
+  FitHealthTipAPI: 'FitHealthTipAPI'
 };
 
 /**

@@ -93,10 +93,53 @@ exports.Prisma.TransactionIsolationLevel = makeStrictEnum({
 });
 
 exports.Prisma.UserScalarFieldEnum = {
-  id: 'id',
+  userID: 'userID',
   username: 'username',
   password: 'password',
+  height: 'height',
+  weight: 'weight',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.WeightLogScalarFieldEnum = {
+  logID: 'logID',
+  date: 'date',
+  weight: 'weight',
+  userID: 'userID'
+};
+
+exports.Prisma.WorkoutLogScalarFieldEnum = {
+  logID: 'logID',
+  planName: 'planName',
+  exerciseName: 'exerciseName',
+  sets: 'sets',
+  reps: 'reps',
+  weight: 'weight',
+  date: 'date',
+  userID: 'userID'
+};
+
+exports.Prisma.StepRecordScalarFieldEnum = {
+  recordID: 'recordID',
+  stepsCount: 'stepsCount',
+  distance: 'distance',
+  calories: 'calories',
+  date: 'date',
+  userID: 'userID'
+};
+
+exports.Prisma.WorkoutRecommendationScalarFieldEnum = {
+  recommendationID: 'recommendationID',
+  planName: 'planName',
+  workoutType: 'workoutType',
+  description: 'description'
+};
+
+exports.Prisma.FitHealthTipAPIScalarFieldEnum = {
+  id: 'id',
+  APIName: 'APIName',
+  connected: 'connected',
+  lastChecked: 'lastChecked'
 };
 
 exports.Prisma.SortOrder = {
@@ -109,9 +152,19 @@ exports.Prisma.QueryMode = {
   insensitive: 'insensitive'
 };
 
+exports.Prisma.NullsOrder = {
+  first: 'first',
+  last: 'last'
+};
+
 
 exports.Prisma.ModelName = {
-  User: 'User'
+  User: 'User',
+  WeightLog: 'WeightLog',
+  WorkoutLog: 'WorkoutLog',
+  StepRecord: 'StepRecord',
+  WorkoutRecommendation: 'WorkoutRecommendation',
+  FitHealthTipAPI: 'FitHealthTipAPI'
 };
 /**
  * Create the Client
@@ -124,7 +177,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\Soled\\Documents\\GitHub\\Brogrammers-CSCI150-Project\\backend\\generated\\prisma",
+      "value": "C:\\Users\\Soled\\Documents\\GitHub\\Brogrammers-CSCI150-Project\\backend\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -142,10 +195,10 @@ const config = {
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
-    "rootEnvPath": "../../.env",
-    "schemaEnvPath": "../../.env"
+    "rootEnvPath": null,
+    "schemaEnvPath": "../../../.env"
   },
-  "relativePath": "../../prisma",
+  "relativePath": "../../../prisma",
   "clientVersion": "6.17.1",
   "engineVersion": "272a37d34178c2894197e17273bf937f25acdeac",
   "datasourceNames": [
@@ -160,13 +213,13 @@ const config = {
       }
     }
   },
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  id        Int      @id @default(autoincrement())\n  username  String   @unique\n  password  String\n  createdAt DateTime @default(now())\n}\n",
-  "inlineSchemaHash": "52d16a711f525c0d776cd80f109ddf8d2c8190b33eb89048ea2ce165b1505435",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client-js\"\n  output   = \"../src/generated/prisma\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n  url      = env(\"DATABASE_URL\")\n}\n\nmodel User {\n  userID    Int      @id @default(autoincrement())\n  username  String   @unique\n  password  String\n  height    Float?\n  weight    Float?\n  createdAt DateTime @default(now())\n\n  weightLogs  WeightLog[]\n  workoutLogs WorkoutLog[]\n  stepRecords StepRecord[]\n}\n\nmodel WeightLog {\n  logID  Int      @id @default(autoincrement())\n  date   DateTime\n  weight Float\n  user   User     @relation(fields: [userID], references: [userID])\n  userID Int\n}\n\nmodel WorkoutLog {\n  logID        Int      @id @default(autoincrement())\n  planName     String?\n  exerciseName String\n  sets         Int?\n  reps         Int?\n  weight       Float?\n  date         DateTime\n  user         User     @relation(fields: [userID], references: [userID])\n  userID       Int\n}\n\nmodel StepRecord {\n  recordID   Int      @id @default(autoincrement())\n  stepsCount Int\n  distance   Float?\n  calories   Float?\n  date       DateTime\n  user       User     @relation(fields: [userID], references: [userID])\n  userID     Int\n}\n\nmodel WorkoutRecommendation {\n  recommendationID Int      @id @default(autoincrement())\n  planName         String\n  workoutType      String[]\n  description      String\n}\n\nmodel FitHealthTipAPI {\n  id          Int       @id @default(autoincrement())\n  APIName     String\n  connected   Boolean   @default(false)\n  lastChecked DateTime?\n}\n",
+  "inlineSchemaHash": "9064bc179f9412b91e4a4c6178a8c2c9bd71986d00a3cda1781f161422fac504",
   "copyEngine": true
 }
 config.dirname = '/'
 
-config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"username\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"User\":{\"fields\":[{\"name\":\"userID\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"username\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"password\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"height\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"weight\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"weightLogs\",\"kind\":\"object\",\"type\":\"WeightLog\",\"relationName\":\"UserToWeightLog\"},{\"name\":\"workoutLogs\",\"kind\":\"object\",\"type\":\"WorkoutLog\",\"relationName\":\"UserToWorkoutLog\"},{\"name\":\"stepRecords\",\"kind\":\"object\",\"type\":\"StepRecord\",\"relationName\":\"StepRecordToUser\"}],\"dbName\":null},\"WeightLog\":{\"fields\":[{\"name\":\"logID\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"date\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"weight\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"UserToWeightLog\"},{\"name\":\"userID\",\"kind\":\"scalar\",\"type\":\"Int\"}],\"dbName\":null},\"WorkoutLog\":{\"fields\":[{\"name\":\"logID\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"planName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"exerciseName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"sets\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"reps\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"weight\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"date\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"UserToWorkoutLog\"},{\"name\":\"userID\",\"kind\":\"scalar\",\"type\":\"Int\"}],\"dbName\":null},\"StepRecord\":{\"fields\":[{\"name\":\"recordID\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"stepsCount\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"distance\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"calories\",\"kind\":\"scalar\",\"type\":\"Float\"},{\"name\":\"date\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"user\",\"kind\":\"object\",\"type\":\"User\",\"relationName\":\"StepRecordToUser\"},{\"name\":\"userID\",\"kind\":\"scalar\",\"type\":\"Int\"}],\"dbName\":null},\"WorkoutRecommendation\":{\"fields\":[{\"name\":\"recommendationID\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"planName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"workoutType\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"description\",\"kind\":\"scalar\",\"type\":\"String\"}],\"dbName\":null},\"FitHealthTipAPI\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"APIName\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"connected\",\"kind\":\"scalar\",\"type\":\"Boolean\"},{\"name\":\"lastChecked\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 defineDmmfProperty(exports.Prisma, config.runtimeDataModel)
 config.engineWasm = {
   getRuntime: async () => require('./query_engine_bg.js'),
