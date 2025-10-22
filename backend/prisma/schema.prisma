@@ -1,0 +1,72 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  userID    Int      @id @default(autoincrement())
+  username  String   @unique
+  password  String
+  height    Float?
+  weight    Float?
+  createdAt DateTime @default(now())
+
+  weightLogs WeightLog[]
+  workoutLogs WorkoutLog[]
+  stepRecords StepRecord[]
+}
+
+model WeightLog {
+  logID     Int      @id @default(autoincrement())
+  date      DateTime
+  weight    Float
+  user      User     @relation(fields: [userID], references: [userID])
+  userID    Int
+}
+
+model WorkoutLog {
+  logID       Int      @id @default(autoincrement())
+  planName    String?
+  exerciseName String
+  sets        Int?
+  reps        Int?
+  weight      Float?
+  date       DateTime
+  user       User     @relation(fields: [userID], references: [userID])
+  userID     Int
+}
+
+model StepRecord {
+  recordID   Int      @id @default(autoincrement())
+  stepsCount Int
+  distance   Float?
+  calories   Float?
+  date       DateTime
+  user       User     @relation(fields: [userID], references: [userID])
+  userID     Int
+}
+
+model WorkoutRecommendation {
+  recommendationID Int      @id @default(autoincrement())
+  planName         String
+  workoutType      String[]
+  description      String
+}
+
+model FitHealthTipAPI {
+  id          Int      @id @default(autoincrement())
+  APIName    String
+  connected  Boolean   @default(false)
+  lastChecked DateTime?
+}

@@ -1,11 +1,26 @@
-import { StatusBar } from 'expo-status-bar';
+import React, { useState, useEffect, use } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import api from './src/api/client';
 
 export default function App() {
+  const [message, setMessage] = useState('Connecting to server...');
+
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        const response = await api.get('/test');
+        setMessage(response.data.message || "Connection successful!");
+      } catch (error) {
+        console.error(error);
+        setMessage('Connection failed.');
+      }
+    };
+    testConnection();
+  }, []);
+
   return (
     <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
+      <Text style={styles.text}>{message}</Text>
     </View>
   );
 }
@@ -17,4 +32,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  text: {
+    fontSize: 20,
+  }
 });
