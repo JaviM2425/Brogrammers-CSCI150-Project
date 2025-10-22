@@ -178,7 +178,7 @@ const config = {
       "value": "prisma-client-js"
     },
     "output": {
-      "value": "C:\\Users\\Soled\\Documents\\GitHub\\Brogrammers-CSCI150-Project\\backend\\src\\generated\\prisma",
+      "value": "C:\\Users\\bigsh\\OneDrive\\Documents\\GitHub\\Brogrammers-CSCI150-Project\\backend\\src\\generated\\prisma",
       "fromEnvVar": null
     },
     "config": {
@@ -192,7 +192,7 @@ const config = {
       }
     ],
     "previewFeatures": [],
-    "sourceFilePath": "C:\\Users\\Soled\\Documents\\GitHub\\Brogrammers-CSCI150-Project\\backend\\prisma\\schema.prisma",
+    "sourceFilePath": "C:\\Users\\bigsh\\OneDrive\\Documents\\GitHub\\Brogrammers-CSCI150-Project\\backend\\prisma\\schema.prisma",
     "isCustomOutput": true
   },
   "relativeEnvPaths": {
