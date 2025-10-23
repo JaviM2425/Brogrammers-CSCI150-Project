@@ -97,7 +97,7 @@ export default function Creation({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#ffffffff",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,

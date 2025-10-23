@@ -29,7 +29,7 @@ export default function WelcomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#000000ff",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,
@@ -37,12 +37,12 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 28,
     fontWeight: "bold",
-    color: "#2b2b2b",
+    color: "#2196F3",
     marginBottom: 10,
   },
   subtitle: {
     fontSize: 16,
-    color: "#6b6b6b",
+    color: "#2196F3",
     textAlign: "center",
     marginBottom: 40,
   },
