@@ -47,6 +47,7 @@ export default function Creation({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Username"
+        placeholderTextColor="#2196F3"
         value={username}
         onChangeText={setUsername}
       />
@@ -54,6 +55,7 @@ export default function Creation({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Password"
+        placeholderTextColor="#2196F3"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
@@ -62,6 +64,7 @@ export default function Creation({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Confirm Password"
+        placeholderTextColor="#2196F3"
         secureTextEntry
         value={confirmPassword}
         onChangeText={setConfirmPassword}
@@ -70,6 +73,7 @@ export default function Creation({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Height (optional)"
+        placeholderTextColor="#2196F3"
         keyboardType="numeric"
         value={height}
         onChangeText={setHeight}
@@ -78,6 +82,7 @@ export default function Creation({ navigation }) {
       <TextInput
         style={styles.input}
         placeholder="Weight (optional)"
+        placeholderTextColor="#2196F3"
         keyboardType="numeric"
         value={weight}
         onChangeText={setWeight}
@@ -97,7 +102,7 @@ export default function Creation({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#ffffffff",
+    backgroundColor: "#000000ff",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -106,6 +111,7 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "bold",
     marginBottom: 30,
+    color: "#2196F3"
   },
   input: {
     width: "90%",
@@ -130,6 +136,6 @@ const styles = StyleSheet.create({
   },
   linkText: {
     marginTop: 20,
-    color: "#4CAF50",
+    color: "#2196F3",
   },
 });
