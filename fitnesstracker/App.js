@@ -5,6 +5,10 @@ import WelcomeScreen from './Components/WelcomeScreen';
 import Login from './Components/Login';
 import Creation from './Components/Creation';
 import Home from './Components/Home';
+import Settings from './Components/Settings';
+import Visuals from './Components/Visuals';
+import WorkoutManager from './Components/WorkoutManager'; 
+import WorkoutRecommendations from './Components/WorkoutRecommendations';
 /*import api from './src/api/client';*/
 
 const Stack = createNativeStackNavigator();
@@ -21,6 +25,10 @@ export default function App() {
         <Stack.Screen name="Login" component={Login} />
         <Stack.Screen name="Creation" component={Creation} />
         <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Settings" component={Settings} />
+        <Stack.Screen name="Visuals" component={Visuals} />
+        <Stack.Screen name="WorkoutManager" component={WorkoutManager} />
+        <Stack.Screen name="WorkoutRecommendations" component={WorkoutRecommendations} />
       </Stack.Navigator>
     </NavigationContainer>
   );
