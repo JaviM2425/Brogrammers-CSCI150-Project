@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import axios from "axios";
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import api from '../src/api/client';
 
 export default function Creation({ navigation }) {
   const [username, setUsername] = useState("");
@@ -21,7 +21,7 @@ export default function Creation({ navigation }) {
     }
 
     try {
-      const response = await axios.post("http://192.168.x.x:5000/api/register", {
+      const response = await api.post("/register", {
         username,
         password,
         height: height ? parseFloat(height) : null,
@@ -30,7 +30,7 @@ export default function Creation({ navigation }) {
 
       if (response.data.success) {
         Alert.alert("Success", "Account created successfully!");
-        navigation.navigate("Login");
+        navigation.navigate("Home");
       } else {
         Alert.alert("Error", response.data.message || "Account creation failed.");
       }
@@ -116,13 +116,14 @@ const styles = StyleSheet.create({
   input: {
     width: "90%",
     height: 45,
-    borderColor: "#ccc",
+    borderColor: "#ffffffff",
+    color: "#ffffffff",
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 10,
     marginBottom: 20,
   },
-  button: {
+  button: { 
     backgroundColor: "#2196F3",
     width: "90%",
     padding: 15,
@@ -130,7 +131,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   buttonText: {
-    color: "#fff",
+    color: "#ffffffff",
     fontSize: 16,
     fontWeight: "bold",
   },

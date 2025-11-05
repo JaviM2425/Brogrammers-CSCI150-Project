@@ -1,6 +1,6 @@
-import React, { useState } from "react";
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import axios from "axios";
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import api from '../src/api/client';
 
 export default function Login({ navigation }) {
   const [username, setUsername] = useState("");
@@ -13,14 +13,14 @@ export default function Login({ navigation }) {
     }
 
     try {
-      const response = await axios.post("http://192.168.x.x:5000/api/login", {
+      const response = await api.post("/login", {
         username,
         password,
       });
 
       if (response.data.success) {
         Alert.alert("Success", "Login successful!");
-        navigation.navigate("Home"); // change later when Home screen exists
+        navigation.navigate("Home");
       } else {
         Alert.alert("Error", "Invalid credentials.");
       }
@@ -80,6 +80,7 @@ const styles = StyleSheet.create({
     width: "90%",
     height: 45,
     borderColor: "#ffffffff",
+    color: "#ffffffff",
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 10,
