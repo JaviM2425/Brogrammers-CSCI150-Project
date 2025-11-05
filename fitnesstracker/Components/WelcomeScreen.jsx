@@ -22,6 +22,14 @@ export default function WelcomeScreen({ navigation }) {
       >
         <Text style={styles.buttonText}>Create Account</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles.button, styles.createButton]}
+        onPress={() => navigation.navigate("Home")}
+      >
+        <Text style={styles.buttonText}>Home</Text>
+      </TouchableOpacity>
+
     </View>
   );
 }
@@ -29,7 +37,7 @@ export default function WelcomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000ff",
+    backgroundColor: "#ffffffff",
     alignItems: "center",
     justifyContent: "center",
     padding: 20,

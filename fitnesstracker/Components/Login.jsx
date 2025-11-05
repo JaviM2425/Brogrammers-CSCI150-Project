@@ -65,7 +65,7 @@ export default function Login({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000ff",
+    backgroundColor: "#ffffffff",
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
@@ -79,8 +79,8 @@ const styles = StyleSheet.create({
   input: {
     width: "90%",
     height: 45,
-    borderColor: "#ffffffff",
-    color: "#ffffffff",
+    borderColor: "#000000ff",
+    color: "#2196F3",
     borderWidth: 1,
     borderRadius: 10,
     paddingHorizontal: 10,
