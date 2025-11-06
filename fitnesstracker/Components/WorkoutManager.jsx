@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
     },
     textarea: {
         width: "80%",
-        height: 120,
+        height: 50,
         borderWidth: 1,
         borderColor: "#ccc",
         borderRadius: 5,
