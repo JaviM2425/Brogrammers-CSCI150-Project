@@ -1,10 +1,14 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import Navbar from './Navbar';
 
-export default function Settings() {
+export default function Settings({ navigation }) {
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Settings</Text>
+        <View style={{flex:1}}>
+            <View style={styles.container}>
+                <Text style={styles.title}>Settings</Text>
+            </View>
+            <Navbar navigation={navigation} />
         </View>
     );
 }
