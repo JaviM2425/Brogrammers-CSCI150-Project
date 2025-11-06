@@ -82,6 +82,17 @@ export default function Settings({ navigation, route }) {
           <Text style={styles2.buttonText}>Save</Text>
         </TouchableOpacity>
       </View>
+import { View, Text, StyleSheet } from "react-native";
+import Navbar from './Navbar';
+
+export default function Settings({ navigation }) {
+    return (
+        <View style={{flex:1}}>
+            <View style={styles.container}>
+                <Text style={styles.title}>Settings</Text>
+            </View>
+            <Navbar navigation={navigation} />
+        </View>
     );
   }
 
