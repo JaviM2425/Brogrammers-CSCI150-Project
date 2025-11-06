@@ -1,18 +1,166 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Platform, StatusBar } from "react-native";
 import NavbarTop from "./NavbarTop";
 import Navbar from './Navbar';
 
+/**
+ * WorkoutRecommendations
+ *
+ * Top-level functional React component that renders a screen listing workout plans.
+ * - Exports a default React component function for use with React Navigation or other routing.
+ * - Accepts an optional "navigation" prop. When present, navigation.navigate is used to change screens.
+ * - All interactive elements call console.log when navigation is not provided so the component remains testable.
+ */
+
+/* Static placeholder dataset representing workout plans.
+   - Each item has an id (unique key), planName (string), workoutType (array of strings), and description (string).
+   - The array shape mirrors typical backend records and is easy to replace with fetched data.
+*/
+const PLANS = [
+  {
+    id: "plan_full_body",
+    planName: "Full Body Routine",
+    workoutType: ["Full Body"],
+    description:
+      "Full-body sessions each workout — good for frequency and general conditioning.",
+  },
+  {
+    id: "plan_core_focus",
+    planName: "Core Focused",
+    workoutType: ["Core", "Stability"],
+    description:
+      "Short sessions that prioritize core stability, posture, and accessory strength.",
+  },
+  {
+    id: "plan_push_pull_legs",
+    planName: "Push / Pull / Legs",
+    workoutType: ["Push", "Pull", "Legs"],
+    description:
+      "A 3-day split emphasizing compound lifts for balanced development.",
+  },
+  {
+    id: "plan_leg_split",
+    planName: "Leg Split",
+    workoutType: ["Legs"],
+    description:
+      "Part of the push/pull/leg split workout routine focused on quad and hamstring strength.",
+  },
+];
+
+/**
+ * Component function
+ * - Receives props; only navigation is used by this component, but more props can be accepted without changes.
+ * - Returns the full layout tree that composes the screen.
+ */
 export default function WorkoutRecommendations({ navigation }) {
-    return (
-        <View style={{flex:1}}>
-            <NavbarTop navigation={navigation} />
-            <View style={styles.container}>
-                <Text style={styles.title}>Workout Recommendations</Text>
-            </View>
-            <Navbar navigation={navigation} />
-        </View>
-    );
+  /**
+   * renderPlan
+   * - Render callback used by FlatList for each plan item.
+   * - Receives an object with "item" corresponding to one entry from PLANS.
+   * - Produces a card-like layout containing title, types, description, and two action buttons.
+   *
+   * Implementation details:
+   * - planName is displayed prominently as the card title.
+   * - workoutType is an array; it's rendered via join(", ") to produce a short tag-like string.
+   * - description is a multi-line summary explaining the plan.
+   * - The "View" button triggers navigation to a detail screen or logs the action.
+   * - The "Add to Log" button triggers navigation to a manager screen or logs the action.
+   */
+  const renderPlan = ({ item }) => (
+    <View style={styles.card}>
+      <View style={styles.cardHeader}>
+        <Text style={styles.planTitle}>{item.planName}</Text>
+        <Text style={styles.planTypes}>{item.workoutType.join(", ")}</Text>
+      </View>
+
+      <Text style={styles.planDescription}>{item.description}</Text>
+
+      <View style={styles.cardActions}>
+        <TouchableOpacity
+          style={[styles.button, styles.primaryButton]}
+          onPress={() =>
+            navigation
+              ? navigation.navigate("WorkoutDetail", {
+                  planId: item.id,
+                  planName: item.planName,
+                })
+              : console.log("View plan detail", item.planName)
+          }
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={`View details for ${item.planName}`}
+        >
+          <Text style={styles.buttonText}>View</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.secondaryButton]}
+          onPress={() =>
+            navigation
+              ? navigation.navigate("WorkoutManager", { prefillPlan: item.id })
+              : console.log("Add plan to Workout Manager", item.planName)
+          }
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel={`Add ${item.planName} to workout log`}
+        >
+          <Text style={styles.buttonText}>Add to Log</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+
+  /**
+   * Main render return
+   * - Root container View holds title, subtitle, scrollable list, and a fixed bottom overlay box.
+   * - FlatList is given flex: 1 to occupy available vertical space between header and overlay.
+   * - The overlay box is absolutely positioned so it remains fixed while the list scrolls underneath.
+   */
+  return (
+    <View style={{flex:1}}>
+      <NavbarTop navigation={navigation} />
+    <View style={styles.container}>
+      <Text style={styles.title}>Workout Recommendations</Text>
+
+      <Text style={styles.subtitle}>
+        Catalog of preloaded plans. Select a plan to view details or add it to
+        your workout log.
+      </Text>
+
+      <FlatList
+        data={PLANS} // data source for the list
+        keyExtractor={(p) => p.id} // unique key extractor to optimize list rendering
+        renderItem={renderPlan} // item renderer function defined above
+        contentContainerStyle={styles.listContent} // padding for list content
+        style={styles.list} // style that constrains list area (flex: 1)
+        showsVerticalScrollIndicator={false} // hide vertical scrollbar for cleaner UI
+      />
+
+      {/* Bottom overlay box that contains the centered create button.
+          The overlay uses absolute positioning so it floats above the list content.
+          The inner button maintains the rounded rectangle appearance and color scheme.
+      */}
+      <View style={styles.bottomBox} pointerEvents="box-none">
+        {/* TouchableOpacity here is the actionable element within the overlay.
+            pointerEvents on the parent ensures touches pass to this button while items
+            under the overlay are visually obscured.
+        */}
+        <TouchableOpacity
+          style={styles.createButtonInner}
+          onPress={() =>
+            navigation ? navigation.navigate("WorkoutCreate") : console.log("Create custom plan")
+          }
+          accessible={true}
+          accessibilityRole="button"
+          accessibilityLabel="Create a custom workout plan"
+        >
+          <Text style={styles.buttonText}>Create Custom Plan</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+    <Navbar navigation={navigation} />
+    </View>
+  );
 }
 
 /**
