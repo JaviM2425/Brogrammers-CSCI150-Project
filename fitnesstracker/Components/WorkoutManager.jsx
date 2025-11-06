@@ -10,6 +10,10 @@ export default function WorkoutManager({ navigation }) {
             <NavbarTop navigation={navigation} />
             <View style={styles.container}>
                 <Text style={styles.title}>Add Workout</Text>
+                <textarea
+                    style={styles.textarea}
+                    placeholder="Enter workout details"
+                />
                 <TouchableOpacity style={styles.button} onPress={() => navigation.navigate("Login")}>
                         <Text style={styles.buttonText}>Add exercise</Text>
                       </TouchableOpacity>
@@ -38,6 +42,20 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         alignItems: "center",
         marginBottom: 20,
-        backgroundColor: "#007BFF",
+        backgroundColor: "#1fd954ff",
+    },
+    title:
+    {
+        fontSize: 24,
+        fontWeight: "bold",
+    },
+    textarea: {
+        width: "80%",
+        height: 15,
+        borderWidth: 1,
+        borderColor: "#ccc",
+        borderRadius: 5,
+        padding: 10,
+        marginBottom: 20,
     },
 });

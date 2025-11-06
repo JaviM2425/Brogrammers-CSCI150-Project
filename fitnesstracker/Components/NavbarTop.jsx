@@ -1,10 +1,12 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function NavbarTop({ navigation }) {
   return (
     <View style={styles.container}>
-    <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('WorkoutManager')}>
+    <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('InputWorkout')}>
         <Text style={styles.text}>Input Workout</Text>
       </TouchableOpacity>
 
@@ -22,7 +24,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2196F3',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     elevation: 8,
@@ -33,7 +35,7 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#333333',
-    fontSize: 12,
+    fontSize: Math.min(width * 0.030, 20),
     fontWeight: '600',
   },
 });

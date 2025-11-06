@@ -9,6 +9,7 @@ import Settings from './Components/Settings';
 import Visuals from './Components/Visuals';
 import WorkoutManager from './Components/WorkoutManager'; 
 import WorkoutRecommendations from './Components/WorkoutRecommendations';
+import InputWorkout from './Components/InputWorkout';
 /*import api from './src/api/client';*/
 
 const Stack = createNativeStackNavigator();
@@ -29,6 +30,7 @@ export default function App() {
         <Stack.Screen name="Visuals" component={Visuals} />
         <Stack.Screen name="WorkoutManager" component={WorkoutManager} />
         <Stack.Screen name="WorkoutRecommendations" component={WorkoutRecommendations} />
+        <Stack.Screen name="InputWorkout" component={InputWorkout} /> 
       </Stack.Navigator>
     </NavigationContainer>
   );

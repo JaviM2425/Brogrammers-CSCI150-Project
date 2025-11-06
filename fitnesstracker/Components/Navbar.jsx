@@ -1,5 +1,7 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
+
+const { width } = Dimensions.get('window');
 
 export default function Navbar({ navigation }) {
   return (
@@ -29,7 +31,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#2196F3',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
     elevation: 8,
@@ -40,7 +42,11 @@ const styles = StyleSheet.create({
   },
   text: {
     color: '#333333',
-    fontSize: 10,
+    fontSize: Math.min(width * 0.030, 20),
     fontWeight: '600',
   },
+  active: {
+    color: '#2196F3',
+  },
+
 });
