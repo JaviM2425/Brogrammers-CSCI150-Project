@@ -1,47 +1,49 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import Navbar from './Navbar';
 
 export default function Home({ navigation }) {
-    return (
-        <>
-        <View style={styles.container}>
-            <Text style={styles.welcomeText}>Welcome to the Fitness Tracker App!</Text>
-            <Text style={styles.infoText}>Track your workouts, monitor your progress, and stay motivated.</Text>
-        </View>
+  return (
+    <View style={{flex: 1}}>
+      <View style={styles.container}>
+        <Text style={styles.welcomeText}>Welcome to the Fitness Tracker App!</Text>
+        <Text style={styles.infoText}>Track your workouts, monitor your progress, and stay motivated.</Text>
+      </View>
 
-        <View style={styles.container}>
-            <TouchableOpacity
-                style={[styles2.button, styles2.loginButton]}
-                onPress={() => navigation.navigate("Settings")}
-            >
-                <Text style={styles2.buttonText}>Settings</Text>
-            </TouchableOpacity>
+      <View style={styles.container}>
+        <TouchableOpacity
+          style={[styles2.button, styles2.loginButton]}
+          onPress={() => navigation.navigate("Settings")}
+        >
+          <Text style={styles2.buttonText}>Settings</Text>
+        </TouchableOpacity>
 
-            <TouchableOpacity
-                style={[styles2.button, styles2.loginButton]}
-                onPress={() => navigation.navigate("Visuals")}
-            >
-                <Text style={styles2.buttonText}>Visuals</Text>
-            </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles2.button, styles2.loginButton]}
+          onPress={() => navigation.navigate("Visuals")}
+        >
+          <Text style={styles2.buttonText}>Visuals</Text>
+        </TouchableOpacity>
 
-            <TouchableOpacity
-                style={[styles2.button, styles2.loginButton]}
-                onPress={() => navigation.navigate("WorkoutManager")}
-            >
-                <Text style={styles2.buttonText}>Workout Manager</Text>
-            </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles2.button, styles2.loginButton]}
+          onPress={() => navigation.navigate("WorkoutManager")}
+        >
+          <Text style={styles2.buttonText}>Workout Manager</Text>
+        </TouchableOpacity>
 
-            <TouchableOpacity
-                style={[styles2.button, styles2.loginButton]}
-                onPress={() => navigation.navigate("WorkoutRecommendations")}
-            >
-                <Text style={styles2.buttonText}>Workout Recommendations</Text>
-            </TouchableOpacity>
-            
-        </View>
-        </>
-    );
-    
+        <TouchableOpacity
+          style={[styles2.button, styles2.loginButton]}
+          onPress={() => navigation.navigate("WorkoutRecommendations")}
+        >
+          <Text style={styles2.buttonText}>Workout Recommendations</Text>
+        </TouchableOpacity>
+      </View>
+
+      <Navbar navigation={navigation} />
+    </View>
+  );
+
 }
 
 const styles = StyleSheet.create({

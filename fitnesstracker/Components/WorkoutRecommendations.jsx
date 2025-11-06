@@ -1,10 +1,16 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
+import NavbarTop from "./NavbarTop";
+import Navbar from './Navbar';
 
-export default function WorkoutRecommendations() {
+export default function WorkoutRecommendations({ navigation }) {
     return (
-        <View style={styles.container}>
-            <Text style={styles.title}>Workout Recommendations</Text>
+        <View style={{flex:1}}>
+            <NavbarTop navigation={navigation} />
+            <View style={styles.container}>
+                <Text style={styles.title}>Workout Recommendations</Text>
+            </View>
+            <Navbar navigation={navigation} />
         </View>
     );
 }
