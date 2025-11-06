@@ -4,7 +4,8 @@ import Navbar from './Navbar';
 
 export default function Home({ navigation }) {
   return (
-  <ScrollView contentContainerStyle={styles.scrollContainer}>
+    <View style={{flex:1}}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
     <View style={styles.container}>
       <Text style={styles.title}>Welcome to Brotein Shake!</Text>
       <Text style={styles.subtitle}>Track your workouts, monitor your progress, and stay motivated.</Text>
@@ -48,10 +49,11 @@ export default function Home({ navigation }) {
       </TouchableOpacity>
       
     </View>
-    <Navbar navigation={navigation} />
   </ScrollView>
+  <Navbar navigation={navigation} />
+  </View>
   );
-  
+
 }
 
 const styles = StyleSheet.create({
