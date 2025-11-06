@@ -26,29 +26,6 @@ export default function Home({ navigation }) {
         <Text style={styles.cardSubtitle}>Keep up the great work!</Text>
       </View>
     </View>
-    
-    <View style={styles.container}>
-      <TouchableOpacity style={[styles2.button, styles2.loginButton]}
-      onPress={() => navigation.navigate("Settings")}>
-        <Text style={styles2.buttonText}>Settings</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={[styles2.button, styles2.loginButton]}
-      onPress={() => navigation.navigate("Visuals")}>
-      <Text style={styles2.buttonText}>Visuals</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={[styles2.button, styles2.loginButton]}
-      onPress={() => navigation.navigate("WorkoutManager")}>
-      <Text style={styles2.buttonText}>Workout Manager</Text>
-      </TouchableOpacity>
-      
-      <TouchableOpacity style={[styles2.button, styles2.loginButton]}
-      onPress={() => navigation.navigate("WorkoutRecommendations")}>
-      <Text style={styles2.buttonText}>Workout Recommendations</Text>
-      </TouchableOpacity>
-      
-    </View>
   </ScrollView>
   <Navbar navigation={navigation} />
   </View>
@@ -117,23 +94,5 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     width: "90%",
     marginTop: 10,
-  },
-});
-
-const styles2 = StyleSheet.create({
-  button: {
-    width: "100%",
-    padding: 15,
-    borderRadius: 10,
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  loginButton: {
-    backgroundColor: "#4CAF50",
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
   },
 });
