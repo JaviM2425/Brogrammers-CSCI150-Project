@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from "react-native";
+import Navbar from "./Navbar";
 
 export default function Settings({ navigation, route }) {
   const mode = route?.params?.mode;
@@ -85,6 +86,7 @@ export default function Settings({ navigation, route }) {
   )};
 
   return (
+    <View style={{flex:1}}>
     <View style={styles.container}>
       <Text style={styles.title}>Settings</Text>
 
@@ -108,6 +110,8 @@ export default function Settings({ navigation, route }) {
       >
         <Text style={styles2.buttonText}>Edit Height & Weight</Text>
       </TouchableOpacity>
+    </View>
+    <Navbar navigation={navigation} />
     </View>
   );
 };
