@@ -27,7 +27,7 @@ export default function Navbar({ navigation }) {
 
 const styles = StyleSheet.create({
   container: {
-    height: 64,
+    height: 100,
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',

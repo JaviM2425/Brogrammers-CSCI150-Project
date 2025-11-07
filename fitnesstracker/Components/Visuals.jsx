@@ -125,7 +125,7 @@ export function WeeklyCaloriesTracker() {
 }
 
 // Combined Demo Component
-export default function SimpleVisuals() {
+export default function SimpleVisuals({ navigation}) {
   return (
     <View style={{flex:1}}>
     <ScrollView style={styles.container}>
