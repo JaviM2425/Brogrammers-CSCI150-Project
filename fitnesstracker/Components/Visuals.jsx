@@ -1,6 +1,7 @@
 import React from "react";
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import { Svg, Circle, Text as SvgText } from 'react-native-svg';
+import Navbar from './Navbar';
 
 // Simple Step Counter without SVG
 export function SimpleStepCounter({ steps = 6500, goal = 10000 }) {
@@ -126,6 +127,7 @@ export function WeeklyCaloriesTracker() {
 // Combined Demo Component
 export default function SimpleVisuals() {
   return (
+    <View style={{flex:1}}>
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Fitness Visuals Test</Text>
       
@@ -142,6 +144,8 @@ export default function SimpleVisuals() {
       </View>
 
     </ScrollView>
+    <Navbar navigation={navigation} />
+    </View>
   );
 }
 
@@ -269,28 +273,3 @@ const styles = StyleSheet.create({
     fontStyle: 'italic',
   },
 });
-
-
-export  function Visuals() {
-    return (
-        <View style={{flex:1}}>
-            <View style={styles.container}>
-                <Text style={styles.title}>Visuals</Text>
-            </View>
-            <Navbar navigation={navigation} />
-        </View>
-    );
-}
-
-/*const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 20,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-    },
-});*/
