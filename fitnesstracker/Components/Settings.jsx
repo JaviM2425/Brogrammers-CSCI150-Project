@@ -1,9 +1,21 @@
-import React from "react";
+import React, { useLayoutEffect } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from "react-native";
 import Navbar from "./Navbar";
 
 export default function Settings({ navigation, route }) {
   const mode = route?.params?.mode;
+
+  // Dynamically toggle header visibility
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      headerShown: !!mode,
+      title: 
+      mode == "username" ? "Change Username" :
+      mode == "password" ? "Change Password" :
+      mode == "hw" ? "Edit Height & Weight" :
+      "Settings",
+    });
+  }, [navigation, mode]);
 
   // --- Username tab ---
   if (mode === "username") {

@@ -92,9 +92,11 @@ export default function Creation({ navigation }) {
         <Text style={styles.buttonText}>Create Account</Text>
       </TouchableOpacity>
 
+      {/*}
       <TouchableOpacity onPress={() => navigation.navigate("Login")}>
         <Text style={styles.linkText}>Already have an account? Login</Text>
       </TouchableOpacity>
+      */}
     </View>
   );
 }

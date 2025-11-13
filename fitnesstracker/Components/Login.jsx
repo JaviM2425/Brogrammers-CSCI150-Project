@@ -55,9 +55,11 @@ export default function Login({ navigation }) {
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
 
+      {/*
       <TouchableOpacity onPress={() => navigation.navigate("Creation")}>
         <Text style={styles.linkText}>Don’t have an account? Create one</Text>
       </TouchableOpacity>
+      */}
     </View>
   );
 }
