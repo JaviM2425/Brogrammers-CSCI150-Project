@@ -9,13 +9,16 @@ import Settings from './Components/Settings';
 import SimpleVisuals from './Components/Visuals';
 import WorkoutManager from './Components/WorkoutManager'; 
 import WorkoutRecommendations from './Components/WorkoutRecommendations';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 /*import api from './src/api/client';*/
 
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <NavigationContainer>
+
+    <SafeAreaProvider>
+      <NavigationContainer>
       <Stack.Navigator initialRouteName="Welcome" screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Login" component={Login} options={{ headerShown: true }} />
@@ -27,6 +30,8 @@ export default function App() {
         <Stack.Screen name="WorkoutRecommendations" component={WorkoutRecommendations} />
       </Stack.Navigator>
     </NavigationContainer>
+    </SafeAreaProvider>
+    
   );
 }
 
