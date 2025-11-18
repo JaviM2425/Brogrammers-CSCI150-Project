@@ -122,6 +122,14 @@ export default function Settings({ navigation, route }) {
       >
         <Text style={styles2.buttonText}>Edit Height & Weight</Text>
       </TouchableOpacity>
+
+      <TouchableOpacity
+        style={[styles3.button, styles3.loginButton]}
+        onPress={() => navigation.navigate("Welcome")}
+      >
+        <Text style={styles3.buttonText}>Log out</Text>
+      </TouchableOpacity>
+
     </View>
     <Navbar navigation={navigation} />
     </View>
@@ -163,6 +171,27 @@ const styles2 = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: "#4CAF50",
+  },
+  createButton: {
+    backgroundColor: "#2196F3",
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+});
+
+const styles3 = StyleSheet.create({
+  button: {
+    width: "80%",
+    padding: 15,
+    borderRadius: 10,
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  loginButton: {
+    backgroundColor: "#f00808ff",
   },
   createButton: {
     backgroundColor: "#2196F3",
