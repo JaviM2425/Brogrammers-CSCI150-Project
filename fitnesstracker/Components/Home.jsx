@@ -1,28 +1,51 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView} from "react-native";
+import React, { useContext, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { AuthContext } from "../App";
 import Navbar from './Navbar';
 
 export default function Home({ navigation }) {
+  const { logout } = useContext(AuthContext);
+  const [user, setUser] = useState(null);
+  const [stepsToday, setStepsToday] = useState(null);   // placeholder for real API
+  const [stepGoal, setStepGoal] = useState(10000);      // default goal
+  const [loggedWorkouts, setLoggedWorkouts] = useState(0);
+
+  // Load logged-in user data
+  useEffect(() => {
+    const loadUser = async () => {
+      const storedUser = await AsyncStorage.getItem("user");
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    };
+    loadUser();
+  }, []);
+
   return (
     <View style={{flex:1}}>
     <ScrollView contentContainerStyle={styles.scrollContainer}>
-    <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Brotein Shake!</Text>
-      <Text style={styles.subtitle}>Track your workouts, monitor your progress, and stay motivated.</Text>
-    </View>
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome{user ? `, ${user.username}` : ""}!</Text>
+        <Text style={styles.subtitle}>Track your workouts, monitor your progress, and stay motivated.</Text>
+      </View>
     
     {/* Account Summary Section */}
     <View style={styles.summaryContainer}>
       <Text style={styles.summaryTitle}>Today's Summary</Text>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Daily Steps</Text>
-        <Text style={styles.cardValue}>5,432 steps</Text>
-        <Text style={styles.cardSubtitle}>Goal: 10,000 steps</Text>
+        <Text style={styles.cardValue}>
+          {stepsToday !== null ? stepsToday.toLocaleString() : "_"}
+        </Text>
+        <Text style={styles.cardSubtitle}>Goal: {stepGoal.toLocaleString()}</Text>
       </View>
 
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Workout Summary</Text>
-        <Text style={styles.cardValue}>2 workouts logged</Text>
+        <Text style={styles.cardValue}>
+          {loggedWorkouts} workouts logged
+        </Text>
         <Text style={styles.cardSubtitle}>Keep up the great work!</Text>
       </View>
     </View>
@@ -90,9 +113,5 @@ const styles = StyleSheet.create({
   cardSubtitle: {
     fontSize: 14,
     color: "#666",
-  },
-  buttonsContainer: {
-    width: "90%",
-    marginTop: 10,
   },
 });

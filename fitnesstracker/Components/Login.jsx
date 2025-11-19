@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { AuthContext } from '../App';
 import api from '../src/api/client';
 
 export default function Login({ navigation }) {
+  const { login } = useContext(AuthContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
 
@@ -13,25 +15,26 @@ export default function Login({ navigation }) {
     }
 
     try {
-      const response = await api.post("/login", {
-        username,
-        password,
-      });
+      const response = await api.post("/login", { username, password });
 
-      if (response.data.success) {
-        Alert.alert("Success", "Login successful!");
-        navigation.navigate("Home");
+      if (response.data?.success) {
+        // Save user using global auth context
+        login(response.data.user);
       } else {
-        Alert.alert("Error", "Invalid credentials.");
+        Alert.alert("Error", "Login Failed.");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Login Error", error);
       Alert.alert("Error", "Unable to connect to the server.");
     }
   };
 
   return (
     <View style={styles.container}>
+      <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+        <Text style={styles.backText}>← Back</Text>
+      </TouchableOpacity>
+
       <Text style={styles.title}>Login</Text>
 
       <TextInput
@@ -54,12 +57,6 @@ export default function Login({ navigation }) {
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
         <Text style={styles.buttonText}>Login</Text>
       </TouchableOpacity>
-
-      {/*
-      <TouchableOpacity onPress={() => navigation.navigate("Creation")}>
-        <Text style={styles.linkText}>Don’t have an account? Create one</Text>
-      </TouchableOpacity>
-      */}
     </View>
   );
 }
@@ -71,6 +68,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+  },
+   backButton: {
+    position: "absolute",
+    top: 60,
+    left: 20,
+  },
+  backText: {
+    fontSize: 18,
+    color: "#2196F3",
+    fontWeight: "bold",
   },
   title: {
     fontSize: 28,
@@ -100,9 +107,5 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  linkText: {
-    marginTop: 20,
-    color: "#2196F3",
   },
 });

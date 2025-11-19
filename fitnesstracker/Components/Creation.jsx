@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { AuthContext } from '../App';
 import api from '../src/api/client';
 
 export default function Creation({ navigation }) {
+  const { login } = useContext(AuthContext);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -30,7 +32,7 @@ export default function Creation({ navigation }) {
 
       if (response.data.success) {
         Alert.alert("Success", "Account created successfully!");
-        navigation.navigate("Home");
+        login(response.data.user);
       } else {
         Alert.alert("Error", response.data.message || "Account creation failed.");
       }
@@ -92,11 +94,9 @@ export default function Creation({ navigation }) {
         <Text style={styles.buttonText}>Create Account</Text>
       </TouchableOpacity>
 
-      {/*}
-      <TouchableOpacity onPress={() => navigation.navigate("Login")}>
-        <Text style={styles.linkText}>Already have an account? Login</Text>
+      <TouchableOpacity onPress={() => navigation.goBack()}>
+        <Text style={{ color: "#2196F3", marginTop: 15 }}>Back to Login</Text>
       </TouchableOpacity>
-      */}
     </View>
   );
 }
@@ -136,9 +136,5 @@ const styles = StyleSheet.create({
     color: "#ffffffff",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  linkText: {
-    marginTop: 20,
-    color: "#2196F3",
   },
 });

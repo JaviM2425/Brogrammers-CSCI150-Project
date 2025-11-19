@@ -1,9 +1,11 @@
-import React, { useLayoutEffect } from "react";
+import React, { useLayoutEffect, useContext } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput } from "react-native";
+import { AuthContext } from "../App";
 import Navbar from "./Navbar";
 
 export default function Settings({ navigation, route }) {
   const mode = route?.params?.mode;
+  const { logout } = useContext(AuthContext);
 
   // Dynamically toggle header visibility
   useLayoutEffect(() => {
@@ -16,6 +18,10 @@ export default function Settings({ navigation, route }) {
       "Settings",
     });
   }, [navigation, mode]);
+
+  const handleLogout = async () => {
+    await logout();
+  };
 
   // --- Username tab ---
   if (mode === "username") {
@@ -125,7 +131,7 @@ export default function Settings({ navigation, route }) {
 
       <TouchableOpacity
         style={[styles3.button, styles3.loginButton]}
-        onPress={() => navigation.navigate("Welcome")}
+        onPress={handleLogout}
       >
         <Text style={styles3.buttonText}>Log out</Text>
       </TouchableOpacity>
