@@ -92,20 +92,45 @@ export default function WorkoutRecommendations({ navigation }) {
         >
           <Text style={styles.buttonText}>View</Text>
         </TouchableOpacity>
+    
+        <TouchableOpacity //giving add to log connection to database
+  style={[styles.button, styles.secondaryButton]}
+  onPress={async () => {
+    try {
+      const response = await fetch("http://localhost:5000/api/recommendations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          planName: item.planName,
+          workoutType: item.workoutType,   // array
+          description: item.description,
+        }),
+      });
 
-        <TouchableOpacity
-          style={[styles.button, styles.secondaryButton]}
-          onPress={() =>
-            navigation
-              ? navigation.navigate("WorkoutManager", { prefillPlan: item.id })
-              : console.log("Add plan to Workout Manager", item.planName)
-          }
-          accessible={true}
-          accessibilityRole="button"
-          accessibilityLabel={`Add ${item.planName} to workout log`}
-        >
-          <Text style={styles.buttonText}>Add to Log</Text>
-        </TouchableOpacity>
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error("Failed:", data);
+        alert("Failed to add workout to log.");
+        return;
+      }
+
+      console.log("Saved:", data);
+      alert(`${item.planName} added to workout log!`);
+
+    } catch (error) {
+      console.error("Network error:", error);
+      alert("Could not connect to backend");
+    }
+  }}
+  accessible={true}
+  accessibilityRole="button"
+  accessibilityLabel={`Add ${item.planName} to workout log`}
+>
+  <Text style={styles.buttonText}>Add to Log</Text>
+</TouchableOpacity>
       </View>
     </View>
   );
