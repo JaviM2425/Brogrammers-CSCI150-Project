@@ -1,11 +1,15 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { useSafeAreaInsets, SafeAreaView } from 'react-native-safe-area-context';
+import { AuthContext } from "../App";
 
 const { width } = Dimensions.get('window');
 
 export default function Navbar({ navigation }) {
   const insets = useSafeAreaInsets();
+  const { loggedIn } = useContext(AuthContext);
+
+  if (!loggedIn) return null;
 
   return (
     <SafeAreaView edges={['bottom']} style={styles.SafeAreaView}>

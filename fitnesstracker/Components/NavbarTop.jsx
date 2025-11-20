@@ -6,11 +6,11 @@ const { width } = Dimensions.get('window');
 export default function NavbarTop({ navigation }) {
   return (
     <View style={styles.container}>
-    <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('WorkoutManager')}>
+    <TouchableOpacity style={styles.item} onPress={() => navigation.replace('WorkoutManager')}>
         <Text style={styles.text}>Input Workout</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.item} onPress={() => navigation.navigate('WorkoutRecommendations')}>
+      <TouchableOpacity style={styles.item} onPress={() => navigation.replace('WorkoutRecommendations')}>
         <Text style={styles.text}>Workout Recommendations</Text>
       </TouchableOpacity>
 
