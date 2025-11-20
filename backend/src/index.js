@@ -89,6 +89,29 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+app.post("/api/steps/log", async (req, res) => {
+  try {
+    console.log("Incoming /api/steps/log:", req.body);
+    const { userId, stepsCount, distance, calories } = req.body;
+
+    const newRecord = await prisma.stepRecord.create({
+      data: {
+        userID: userId,
+        stepsCount: stepsCount,
+        distance: distance,
+        calories: calories,
+        date: new Date(),
+      },
+    });
+
+    res.json({ success: true, record: newRecord });
+
+  } catch (err) {
+    console.error("Step logging error:", err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 // Start the server (http://localhost:5000/api/test)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {

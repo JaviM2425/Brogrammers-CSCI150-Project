@@ -1,14 +1,15 @@
 import React, { useContext, useEffect, useState } from "react";
-import { View, Text, StyleSheet, ScrollView} from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import useStepTracker from "../src/hooks/useStepTracker";
 import { AuthContext } from "../App";
 import Navbar from './Navbar';
 
 export default function Home({ navigation }) {
   const { logout } = useContext(AuthContext);
   const [user, setUser] = useState(null);
-  const [stepsToday, setStepsToday] = useState(null);   // placeholder for real API
-  const [stepGoal, setStepGoal] = useState(10000);      // default goal
+  const { steps, distance, calories } = useStepTracker();
+  const [stepGoal, setStepGoal] = useState(10000);     
   const [loggedWorkouts, setLoggedWorkouts] = useState(0);
 
   // Load logged-in user data
@@ -35,10 +36,9 @@ export default function Home({ navigation }) {
       <Text style={styles.summaryTitle}>Today's Summary</Text>
       <View style={styles.card}>
         <Text style={styles.cardTitle}>Daily Steps</Text>
-        <Text style={styles.cardValue}>
-          {stepsToday !== null ? stepsToday.toLocaleString() : "_"}
-        </Text>
+        <Text style={styles.cardValue}>{steps.toLocaleString()}</Text>
         <Text style={styles.cardSubtitle}>Goal: {stepGoal.toLocaleString()}</Text>
+        <Text style={styles.cardValue}>Distance: {distance.toFixed(2)} miles | Calories: {calories.toFixed(1)}</Text>
       </View>
 
       <View style={styles.card}>
@@ -48,6 +48,11 @@ export default function Home({ navigation }) {
         </Text>
         <Text style={styles.cardSubtitle}>Keep up the great work!</Text>
       </View>
+
+      <TouchableOpacity onPress={() => navigation.navigate("StepTest")}>
+         <Text>Test Step Tracker</Text>
+      </TouchableOpacity>
+
     </View>
   </ScrollView>
   <Navbar navigation={navigation} />
