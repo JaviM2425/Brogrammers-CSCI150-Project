@@ -89,6 +89,36 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Get today's steps
+app.get('/api/steps/today', async (req, res) => {
+  try {
+    const { userId } = req.query;
+    const id = parseInt(userId, 10);
+    if (!id) return res.status(400).json({ error: 'userId is required' });
+
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    const record = await prisma.stepRecord.findFirst({
+      where: {
+        userID: id,
+        date: {
+          gte: start,
+          lte: end,
+        },
+      },
+      orderBy: { date: 'desc' },
+    });
+
+    res.json({ success: true, steps: record ? record.stepsCount : 1000 });
+  } catch (error) {
+    console.error('Error fetching steps:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
 // Start the server (http://localhost:5000/api/test)
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
