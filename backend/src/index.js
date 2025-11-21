@@ -4,21 +4,24 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcrypt');
 const { PrismaClient } = require('./generated/prisma');
-const { parse } = require('dotenv');
 const prisma = new PrismaClient();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Test route
+/* ===========================
+   TEST ROUTE
+=========================== */
 app.get('/api/test', (req, res) => {
-  res.json({ message: 'Backend is working!' })
+  res.json({ message: 'Backend is working!' });
 });
 
-// Register route
+/* ===========================
+   REGISTER
+=========================== */
 app.post('/api/register', async (req, res) => {
-  try { 
+  try {
     const { username, password, height, weight } = req.body;
 
     if (!username || !password) {
@@ -35,6 +38,7 @@ app.post('/api/register', async (req, res) => {
         weight: weight ? parseFloat(weight) : null,
       }
     });
+
     console.log('New user registered:', newUser.username);
 
     res.json({
@@ -47,30 +51,31 @@ app.post('/api/register', async (req, res) => {
         weight: newUser.weight,
       }
     });
+
   } catch (error) {
     console.error('Error registering user:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Login route
+/* ===========================
+   LOGIN
+=========================== */
 app.post('/api/login', async (req, res) => {
   try {
     const { username, password } = req.body;
 
-    if (!username || !password) {
+    if (!username || !password)
       return res.status(400).json({ error: 'Username and password are required' });
-    }
 
     const user = await prisma.user.findUnique({ where: { username } });
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' })
-    }
+    if (!user)
+      return res.status(404).json({ error: 'User not found' });
 
     const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
+    if (!isPasswordValid)
       return res.status(401).json({ error: 'Invalid password' });
-    }
+
     console.log('User logged in:', user.username);
 
     res.json({
@@ -83,50 +88,28 @@ app.post('/api/login', async (req, res) => {
         weight: user.weight,
       }
     });
+
   } catch (error) {
     console.error('Error during login:', error);
     res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// Get today's steps
-app.get('/api/steps/today', async (req, res) => {
-  try {
-    const { userId } = req.query;
-    const id = parseInt(userId, 10);
-    if (!id) return res.status(400).json({ error: 'userId is required' });
-
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
-
-    const record = await prisma.stepRecord.findFirst({
-      where: {
-        userID: id,
-        date: {
-          gte: start,
-          lte: end,
-        },
-      },
-      orderBy: { date: 'desc' },
-    });
-
-    res.json({ success: true, steps: record ? record.stepsCount : 1000 });
-  } catch (error) {
-    console.error('Error fetching steps:', error);
-    res.status(500).json({ error: 'Internal server error' });
+/* ===========================
+   POST: LOG A STEP RECORD
+=========================== */
 app.post("/api/steps/log", async (req, res) => {
   try {
     console.log("Incoming /api/steps/log:", req.body);
+
     const { userId, stepsCount, distance, calories } = req.body;
 
     const newRecord = await prisma.stepRecord.create({
       data: {
         userID: userId,
-        stepsCount: stepsCount,
-        distance: distance,
-        calories: calories,
+        stepsCount,
+        distance,
+        calories,
         date: new Date(),
       },
     });
@@ -139,8 +122,60 @@ app.post("/api/steps/log", async (req, res) => {
   }
 });
 
-// Start the server (http://localhost:5000/api/test)
+/* ===========================
+   GET: TODAY’S STEP SUMMARY
+=========================== */
+app.get('/api/steps/today', async (req, res) => {
+  try {
+    const { userId } = req.query;
+
+    if (!userId)
+      return res.status(400).json({ error: "userId is required" });
+
+    const id = parseInt(userId, 10);
+
+    // Start of today
+    const start = new Date();
+    start.setHours(0, 0, 0, 0);
+
+    const end = new Date();
+    end.setHours(23, 59, 59, 999);
+
+    // Fetch ALL records for today
+    const records = await prisma.stepRecord.findMany({
+      where: {
+        userID: id,
+        date: { gte: start, lte: end },
+      },
+      orderBy: { date: "asc" }
+    });
+
+    // Sum all values for the day
+    const dailySummary = records.reduce(
+      (acc, r) => {
+        acc.steps += r.stepsCount;
+        acc.distance += r.distance || 0;
+        acc.calories += r.calories || 0;
+        return acc;
+      },
+      { steps: 0, distance: 0, calories: 0 }
+    );
+
+    res.json({
+      success: true,
+      ...dailySummary
+    });
+
+  } catch (error) {
+    console.error("Error fetching today’s steps:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ===========================
+   START SERVER
+=========================== */
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
-    console.log(`Backend is running on port ${PORT}`);
+  console.log(`Backend is running on port ${PORT}`);
 });
