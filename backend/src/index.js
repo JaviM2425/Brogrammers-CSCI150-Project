@@ -116,6 +116,26 @@ app.get('/api/steps/today', async (req, res) => {
   } catch (error) {
     console.error('Error fetching steps:', error);
     res.status(500).json({ error: 'Internal server error' });
+app.post("/api/steps/log", async (req, res) => {
+  try {
+    console.log("Incoming /api/steps/log:", req.body);
+    const { userId, stepsCount, distance, calories } = req.body;
+
+    const newRecord = await prisma.stepRecord.create({
+      data: {
+        userID: userId,
+        stepsCount: stepsCount,
+        distance: distance,
+        calories: calories,
+        date: new Date(),
+      },
+    });
+
+    res.json({ success: true, record: newRecord });
+
+  } catch (err) {
+    console.error("Step logging error:", err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

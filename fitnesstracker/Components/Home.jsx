@@ -4,6 +4,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import Navbar from "./Navbar";
 import { Svg, Circle } from "react-native-svg";
 import api from "../src/api/client";
+import React, { useContext, useEffect, useState } from "react";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import useStepTracker from "../src/hooks/useStepTracker";
+import { AuthContext } from "../App";
+import Navbar from './Navbar';
 
 export default function Home({ navigation }) {
   const [user, setUser] = useState(null);
@@ -12,6 +18,9 @@ export default function Home({ navigation }) {
   const [loggedWorkouts] = useState(2);
   const { width } = useWindowDimensions();
   const isWide = width >= 700;
+  const { steps, distance, calories } = useStepTracker();
+  const [stepGoal, setStepGoal] = useState(10000);     
+  const [loggedWorkouts, setLoggedWorkouts] = useState(0);
 
   useEffect(() => {
     const loadUser = async () => {
@@ -115,6 +124,35 @@ export default function Home({ navigation }) {
         </View>
       </ScrollView>
       <Navbar navigation={navigation} />
+    <View style={{flex:1}}>
+    <ScrollView contentContainerStyle={styles.scrollContainer}>
+      <View style={styles.container}>
+        <Text style={styles.title}>Welcome{user ? `, ${user.username}` : ""}!</Text>
+        <Text style={styles.subtitle}>Track your workouts, monitor your progress, and stay motivated.</Text>
+      </View>
+    
+    {/* Account Summary Section */}
+    <View style={styles.summaryContainer}>
+      <Text style={styles.summaryTitle}>Today's Summary</Text>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Daily Steps</Text>
+        <Text style={styles.cardValue}>{steps.toLocaleString()}</Text>
+        <Text style={styles.cardSubtitle}>Goal: {stepGoal.toLocaleString()}</Text>
+        <Text style={styles.cardValue}>Distance: {distance.toFixed(2)} miles | Calories: {calories.toFixed(1)}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>Workout Summary</Text>
+        <Text style={styles.cardValue}>
+          {loggedWorkouts} workouts logged
+        </Text>
+        <Text style={styles.cardSubtitle}>Keep up the great work!</Text>
+      </View>
+
+      <TouchableOpacity onPress={() => navigation.navigate("StepTest")}>
+         <Text>Test Step Tracker</Text>
+      </TouchableOpacity>
+
     </View>
   );
 }

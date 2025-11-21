@@ -12,6 +12,7 @@ import Settings from './Components/Settings';
 import SimpleVisuals from './Components/Visuals';
 import WorkoutManager from './Components/WorkoutManager';
 import WorkoutRecommendations from './Components/WorkoutRecommendations';
+import StepTest from './Components/StepTest';
 
 export const AuthContext = createContext();
 const Stack = createNativeStackNavigator();
@@ -60,6 +61,7 @@ export default function App() {
             <Stack.Screen name="Visuals" component={SimpleVisuals} /> 
             <Stack.Screen name="WorkoutManager" component={WorkoutManager} />
             <Stack.Screen name="WorkoutRecommendations" component={WorkoutRecommendations} />
+            <Stack.Screen name="StepTest" component={StepTest} />
             </>
           )}
         </Stack.Navigator>
