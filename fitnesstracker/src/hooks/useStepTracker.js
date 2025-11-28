@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Accelerometer } from "expo-sensors";
+import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 export default function useStepTracker(userWeight = 70) {
@@ -17,6 +18,12 @@ export default function useStepTracker(userWeight = 70) {
   const lastPeakRef = useRef(Date.now());
 
   useEffect(() => {
+    if (Platform.OS === "web") {
+      console.log("Accelerometer not supported on web");
+      setIsAvailable(false);
+      return;
+    }
+
     // Check sensor availability
     Accelerometer.isAvailableAsync().then(setIsAvailable);
 
@@ -64,6 +71,7 @@ export default function useStepTracker(userWeight = 70) {
     if (!userStr) return;
 
     const user = JSON.parse(userStr);
+    if (Platform.OS === "web") return;
 
     try {
       // IMPORTANT: your .env already has /api, so DON'T add it again here
