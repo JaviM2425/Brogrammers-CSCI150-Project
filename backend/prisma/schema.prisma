@@ -20,6 +20,7 @@ model User {
   password  String
   height    Float?
   weight    Float?
+  stepGoal  Int?     @default(10000)
   createdAt DateTime @default(now())
 
   weightLogs WeightLog[]

@@ -1,15 +1,16 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useContext } from "react";
 import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Svg, Circle } from "react-native-svg";
-import { useFocusEffect } from "@react-navigation/native";
 import { useStepTrackerContext } from "../src/providers/StepTrackerProvider";
+import { AuthContext } from "../App";
 import Navbar from "./Navbar";
 
 export default function Home({ navigation }) {
   const [user, setUser] = useState(null);
+  const { user: authUser } = useContext(AuthContext);
   const { steps: liveSteps, distance, calories } = useStepTrackerContext();
-  const [stepGoal] = useState(10000);
+  const [stepGoal, setStepGoal] = useState(10000);
   const [loggedWorkouts] = useState(2);
   const caloriesDisplay =
     calories === null || calories === undefined ? "N/A" : calories.toFixed(1);
@@ -27,6 +28,21 @@ export default function Home({ navigation }) {
     };
     loadUser();
   }, []);
+
+  useEffect(() => {
+    if (authUser) {
+      setUser(authUser);
+      if (authUser.stepGoal) {
+        setStepGoal(authUser.stepGoal);
+      }
+    }
+  }, [authUser]);
+
+  useEffect(() => {
+    if (!authUser && user?.stepGoal) {
+      setStepGoal(user.stepGoal);
+    }
+  }, [user, authUser]);
   const stepsToday = liveSteps;
   
   const stepPercent = useMemo(() => {

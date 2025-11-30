@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "User" ADD COLUMN     "stepGoal" INTEGER DEFAULT 10000;

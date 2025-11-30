@@ -1,150 +1,209 @@
-import React from "react";
-import { View, StyleSheet, ScrollView, Text } from 'react-native';
-import { Svg, Circle, Text as SvgText } from 'react-native-svg';
-import Navbar from './Navbar';
+import React, { useContext, useEffect, useMemo, useState } from "react";
+import { View, StyleSheet, ScrollView, Text } from "react-native";
+import { Svg, Circle, Polyline } from "react-native-svg";
+import Navbar from "./Navbar";
+import { useStepTrackerContext } from "../src/providers/StepTrackerProvider";
+import { AuthContext } from "../App";
+import api from "../src/api/client";
 
-// Simple Step Counter without SVG
-export function SimpleStepCounter({ steps = 6500, goal = 10000 }) {
-  const progress = Math.min(steps / goal, 1);
-  const progressWidth = progress * 200;
+const formatShortDate = (isoString) => {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  if (Number.isNaN(d.getTime())) return String(isoString).slice(5, 10);
+  const month = `${d.getMonth() + 1}`.padStart(2, "0");
+  const day = `${d.getDate()}`.padStart(2, "0");
+  return `${month}-${day}`;
+};
+
+const formatDayAbbrev = (isoString) => {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return Number.isNaN(d.getTime()) ? "" : days[d.getDay()];
+};
+
+function StepCard({ steps, goal }) {
+  const progress = Math.min(goal ? steps / goal : 0, 1);
 
   return (
-    <View style={styles.stepContainer}>
+    <View style={styles.section}>
       <Text style={styles.stepTitle}>Steps Today</Text>
       <Text style={styles.stepCount}>{steps.toLocaleString()}</Text>
+      <Text style={styles.stepSub}>steps</Text>
       <Text style={styles.stepGoal}>Goal: {goal.toLocaleString()}</Text>
-      
+
       <View style={styles.circleContainer}>
-        <Svg height="160" width="160">
-          {/* Background circle */}
+        <Svg height="170" width="170">
           <Circle
-            cx="80"
-            cy="80"
+            cx="85"
+            cy="85"
             r="70"
-            stroke="#E0E0E0"
+            stroke="#E3E8F0"
             strokeWidth="12"
             fill="transparent"
           />
-          {/* Progress circle */}
           <Circle
-            cx="80"
-            cy="80"
+            cx="85"
+            cy="85"
             r="70"
             stroke="#4CAF50"
             strokeWidth="12"
             fill="transparent"
             strokeDasharray={`${progress * 440} 440`}
             strokeLinecap="round"
-            transform="rotate(-90 80 80)"
+            transform="rotate(-90 85 85)"
           />
-          {/* Percentage text */}
-          <SvgText
-            x="80"
-            y="75"
-            textAnchor="middle"
-            fontSize="20"
-            fontWeight="bold"
-            fill="#4CAF50"
-          >
-            {Math.round(progress * 100)}%
-          </SvgText>
-          {/* Steps text */}
-          <SvgText
-            x="80"
-            y="95"
-            textAnchor="middle"
-            fontSize="12"
-            fill="#666"
-          >
-            {steps.toLocaleString()} steps
-          </SvgText>
         </Svg>
       </View>
+      <Text style={styles.progressNote}>{Math.round(progress * 100)}% of goal</Text>
     </View>
   );
 }
 
-// Simple Weight Chart without external library
-export function SimpleWeightChart() {
-  const weights = [75.2, 74.8, 74.5, 74.1, 73.8, 73.5];
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+function LineChartCard({ title, data, color, valueFormatter, secondaryNote }) {
+  if (!data.length) {
+    return (
+      <View style={styles.section}>
+        <Text style={styles.chartTitle}>{title}</Text>
+        {secondaryNote ? <Text style={styles.chartSubtitle}>{secondaryNote}</Text> : null}
+        <Text style={styles.emptyText}>No data yet.</Text>
+      </View>
+    );
+  }
+
+  const chartWidth = 300;
+  const chartHeight = 160;
+  const pad = 18;
+
+  const values = data.map((d) => d.value);
+  const minV = Math.min(...values);
+  const maxV = Math.max(...values);
+  const range = Math.max(maxV - minV, 1);
+
+  const points = data.map((d, i) => {
+    const x =
+      pad +
+      (data.length === 1
+        ? (chartWidth - pad * 2) / 2
+        : ((chartWidth - pad * 2) / (data.length - 1)) * i);
+    const y = pad + (chartHeight - pad * 2) * (1 - (d.value - minV) / range);
+    return { ...d, x, y };
+  });
+
+  const showLabel = () => true;
 
   return (
-    <View style={styles.chartContainer}>
-      <Text style={styles.chartTitle}>Weight Progress</Text>
-      <View style={styles.chartArea}>
-        {weights.map((weight, index) => (
-          <View key={index} style={styles.chartBar}>
-            <View style={[styles.bar, { height: (weight - 70) * 10 }]} />
-            <Text style={styles.barLabel}>{months[index]}</Text>
-            <Text style={styles.weightLabel}>{weight}kg</Text>
-          </View>
-        ))}
+    <View style={styles.section}>
+      <Text style={styles.chartTitle}>{title}</Text>
+      {secondaryNote ? <Text style={styles.chartSubtitle}>{secondaryNote}</Text> : null}
+      <View style={styles.lineChartBox}>
+        <Svg width={chartWidth} height={chartHeight}>
+          <Polyline
+            points={points.map((p) => `${p.x},${p.y}`).join(" ")}
+            fill="none"
+            stroke={color}
+            strokeWidth="2.5"
+          />
+          {points.map((p, idx) => (
+            <Circle key={idx} cx={p.x} cy={p.y} r="4" fill={color} />
+          ))}
+        </Svg>
+        <View style={styles.lineLabelRow}>
+          {points.map((p, idx) => (
+            <Text key={idx} style={styles.lineLabelText}>
+              {showLabel(idx) ? p.label : ""}
+            </Text>
+          ))}
+        </View>
+        <View style={styles.lineValueRow}>
+          {points.map((p, idx) => (
+            <Text key={idx} style={styles.lineValueText}>
+              {showLabel(idx) ? valueFormatter(p.value) : ""}
+            </Text>
+          ))}
+        </View>
       </View>
     </View>
   );
 }
 
-// Weekly Calories Tracker
-export function WeeklyCaloriesTracker() {
-  const weeklyCalories = [1850, 2100, 1950, 2200, 1800, 2050, 1900];
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
-  const dailyGoal = 2000;
+export default function SimpleVisuals({ navigation }) {
+  const { user } = useContext(AuthContext);
+  const { steps } = useStepTrackerContext();
+  const [stepGoal, setStepGoal] = useState(user?.stepGoal || 10000);
+  const [weightHistory, setWeightHistory] = useState([]);
+  const [weeklyCalories, setWeeklyCalories] = useState([]);
+  const [weeklyRange, setWeeklyRange] = useState("");
+
+  useEffect(() => {
+    if (user?.stepGoal) setStepGoal(user.stepGoal);
+  }, [user]);
+
+  useEffect(() => {
+    const fetchWeightHistory = async () => {
+      try {
+        const res = await api.get(`/weights/history?userId=${user.id}`);
+        const list = res.data?.weights || [];
+        setWeightHistory(
+          list.map((w) => ({
+            label: formatShortDate(w.date),
+            value: w.weight,
+          }))
+        );
+      } catch (e) {
+        console.log("Failed to load weight history", e.message);
+      }
+    };
+
+    const fetchWeekly = async () => {
+      try {
+        const res = await api.get(`/steps/weekly?userId=${user.id}`);
+        const weekly = (res.data?.weekly || []).sort(
+          (a, b) => new Date(a.date) - new Date(b.date)
+        );
+        const start = weekly[0]?.date;
+        const end = weekly[weekly.length - 1]?.date;
+        setWeeklyCalories(
+          weekly.map((d) => ({
+            label: formatDayAbbrev(d.date),
+            value: Math.round(d.calories || 0),
+          }))
+        );
+        setWeeklyRange(start && end ? `${formatShortDate(start)} - ${formatShortDate(end)}` : "");
+      } catch (e) {
+        console.log("Failed to load weekly steps", e.message);
+      }
+    };
+
+    if (user?.id) {
+      fetchWeightHistory();
+      fetchWeekly();
+    }
+  }, [user]);
 
   return (
-    <View style={styles.caloriesContainer}>
-      <Text style={styles.chartTitle}>Weekly Calories</Text>
-      <View style={styles.caloriesGrid}>
-        {days.map((day, index) => {
-          const calories = weeklyCalories[index];
-          const progress = Math.min(calories / dailyGoal, 1.2);
-          const isOverGoal = calories > dailyGoal;
-          
-          return (
-            <View key={index} style={styles.calorieDay}>
-              <Text style={styles.dayLabel}>{day}</Text>
-              <View style={styles.calorieBarContainer}>
-                <View style={[
-                  styles.calorieBar,
-                  {
-                    height: progress * 80,
-                    backgroundColor: isOverGoal ? '#FF5722' : '#4CAF50'
-                  }
-                ]} />
-              </View>
-              <Text style={styles.calorieValue}>{calories}</Text>
-            </View>
-          );
-        })}
-      </View>
-      <View style={styles.goalLine}>
-        <Text style={styles.goalText}>Goal: {dailyGoal} cal/day</Text>
-      </View>
-    </View>
-  );
-}
+    <View style={{ flex: 1 }}>
+      <ScrollView style={styles.container}>
+        <Text style={styles.title}>Fitness Visuals</Text>
 
-// Combined Demo Component
-export default function SimpleVisuals({ navigation}) {
-  return (
-    <View style={{flex:1}}>
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Fitness Visuals Test</Text>
-      
-      <View style={styles.section}>
-        <SimpleStepCounter steps={5564} goal={10000} />
-      </View>
+        <StepCard steps={steps} goal={stepGoal} />
 
-      <View style={styles.section}>
-        <SimpleWeightChart />
-      </View>
+        <LineChartCard
+          title="Weight Progress"
+          data={weightHistory}
+          color="#2196F3"
+          valueFormatter={(v) => `${v.toFixed(1)} kg`}
+        />
 
-      <View style={styles.section}>
-        <WeeklyCaloriesTracker />
-      </View>
-
-    </ScrollView>
-    <Navbar navigation={navigation} />
+        <LineChartCard
+          title="Weekly Calories"
+          data={weeklyCalories}
+          color="#4CAF50"
+          valueFormatter={(v) => `${v} cal`}
+          secondaryNote={weeklyRange || null}
+        />
+      </ScrollView>
+      <Navbar navigation={navigation} />
     </View>
   );
 }
@@ -152,124 +211,102 @@ export default function SimpleVisuals({ navigation}) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-    paddingTop: 50,
+    backgroundColor: "#f5f5f5",
+    paddingTop: 24,
   },
   title: {
     fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 30,
-    color: '#333',
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 16,
+    color: "#333",
   },
   section: {
-    backgroundColor: 'white',
-    margin: 16,
-    borderRadius: 12,
+    backgroundColor: "white",
+    marginHorizontal: 16,
+    marginBottom: 16,
+    borderRadius: 14,
     padding: 20,
-    elevation: 2,
-  },
-  stepContainer: {
-    alignItems: 'center',
-    padding: 20,
+    elevation: 3,
   },
   stepTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 6,
   },
   stepCount: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#4CAF50',
-    marginBottom: 5,
+    fontSize: 44,
+    fontWeight: "bold",
+    color: "#4CAF50",
+    textAlign: "center",
+  },
+  stepSub: {
+    fontSize: 14,
+    color: "#555",
+    textAlign: "center",
+    marginTop: -4,
+    marginBottom: 8,
   },
   stepGoal: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
+    color: "#666",
+    textAlign: "center",
+    marginBottom: 12,
   },
   circleContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginVertical: 6,
   },
-  chartContainer: {
-    padding: 20,
+  progressNote: {
+    textAlign: "center",
+    color: "#666",
+    marginTop: 10,
+    fontSize: 14,
   },
   chartTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
+    fontWeight: "bold",
+    textAlign: "center",
+    marginBottom: 12,
+    color: "#111",
   },
-  chartArea: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    height: 150,
+  lineChartBox: {
+    alignItems: "center",
   },
-  chartBar: {
-    alignItems: 'center',
+  lineLabelRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 6,
+    width: 300,
   },
-  bar: {
-    width: 20,
-    backgroundColor: '#2196F3',
-    borderRadius: 2,
-    marginBottom: 5,
-  },
-  barLabel: {
-    fontSize: 12,
-    color: '#666',
-  },
-  weightLabel: {
-    fontSize: 10,
-    color: '#333',
+  lineValueRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginTop: 2,
+    width: 300,
   },
-  caloriesContainer: {
-    padding: 20,
-  },
-  caloriesGrid: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    alignItems: 'flex-end',
-    height: 120,
-    marginBottom: 10,
-  },
-  calorieDay: {
-    alignItems: 'center',
+  lineLabelText: {
+    fontSize: 12,
+    color: "#444",
+    textAlign: "center",
     flex: 1,
   },
-  dayLabel: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333',
-  },
-  calorieBarContainer: {
-    height: 80,
-    width: 20,
-    justifyContent: 'flex-end',
-    alignItems: 'center',
-  },
-  calorieBar: {
-    width: 20,
-    borderRadius: 2,
-    minHeight: 5,
-  },
-  calorieValue: {
-    fontSize: 10,
-    marginTop: 5,
-    color: '#666',
-  },
-  goalLine: {
-    alignItems: 'center',
-    marginTop: 10,
+  lineValueText: {
+    fontSize: 11,
+    color: "#666",
+    textAlign: "center",
+    flex: 1,
   },
   goalText: {
     fontSize: 12,
-    color: '#666',
-    fontStyle: 'italic',
+    color: "#666",
+    textAlign: "center",
+    marginTop: 10,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#666",
   },
 });

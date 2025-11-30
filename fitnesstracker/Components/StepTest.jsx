@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from "react-native";
 import useStepTracker from "../src/hooks/useStepTracker";
 
 export default function StepTest() {
-  const tracker = useStepTracker(70);
+  const tracker = useStepTracker(0);
   if (!tracker) return null;
   
   const {
