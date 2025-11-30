@@ -2,12 +2,13 @@ import React, { useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, ScrollView, useWindowDimensions } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Svg, Circle } from "react-native-svg";
-import useStepTracker from "../src/hooks/useStepTracker";
+import { useFocusEffect } from "@react-navigation/native";
+import { useStepTrackerContext } from "../src/providers/StepTrackerProvider";
 import Navbar from "./Navbar";
 
 export default function Home({ navigation }) {
   const [user, setUser] = useState(null);
-  const { steps, distance, calories } = useStepTracker();
+  const { steps: liveSteps, distance, calories } = useStepTrackerContext();
   const [stepGoal] = useState(10000);
   const [loggedWorkouts] = useState(2);
 
@@ -24,10 +25,8 @@ export default function Home({ navigation }) {
     };
     loadUser();
   }, []);
-
-  // Convert tracker steps → your UI logic
-  const stepsToday = steps ?? 0;
-
+  const stepsToday = liveSteps;
+  
   const stepPercent = useMemo(() => {
     if (!stepGoal || !stepsToday) return 0;
     return Math.min(stepsToday / stepGoal, 1);

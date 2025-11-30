@@ -3,103 +3,100 @@ import { Accelerometer } from "expo-sensors";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function useStepTracker(userWeight = 70) {
-  const [isAvailable, setIsAvailable] = useState(false);
+let globalSubscription = null;
 
-  const [steps, setSteps] = useState(0);
+export default function useStepTracker(initialBaseSteps, userWeight = 70) {
+  const [isAvailable, setIsAvailable] = useState(false);
+  const [baseStepsToday, setBaseStepsToday] = useState(null);
+  const [sessionSteps, setSessionSteps] = useState(0);
   const [distance, setDistance] = useState(0);
   const [calories, setCalories] = useState(0);
-
-  // Debug data
-  const [accel, setAccel] = useState({ x: 0, y: 0, z: 0 });
-  const [magnitude, setMagnitude] = useState(0);
 
   const threshold = 1.35;
   const lastPeakRef = useRef(Date.now());
 
   useEffect(() => {
-    if (Platform.OS === "web") {
-      console.log("Accelerometer not supported on web");
-      setIsAvailable(false);
-      return;
-    }
+    if (initialBaseSteps === null) return;
 
-    // Check sensor availability
-    Accelerometer.isAvailableAsync().then(setIsAvailable);
+    setBaseStepsToday(initialBaseSteps);
+    setSessionSteps(0);
+  }, [initialBaseSteps]);
 
-    // Set update interval
-    Accelerometer.setUpdateInterval(100); // ~10 Hz
+  useEffect(() => {
+    if (baseStepsToday === null) return;
+    if (Platform.OS === "web") return;
 
-    const subscription = Accelerometer.addListener(({ x, y, z }) => {
-      setAccel({ x, y, z });
+    const startTracking = async () => {
+      const available = await Accelerometer.isAvailableAsync();
+      setIsAvailable(available);
 
-      const mag = Math.sqrt(x * x + y * y + z * z);
-      setMagnitude(mag);
+      if (!available) return;
 
-      const now = Date.now();
+      Accelerometer.setUpdateInterval(100);
 
-      if (mag > threshold && now - lastPeakRef.current > 350) {
-        lastPeakRef.current = now;
+      if (!globalSubscription) {
+        globalSubscription = Accelerometer.addListener(({ x, y, z }) => {
+          const mag = Math.sqrt(x * x + y * y + z * z);
+          const now = Date.now();
 
-        setSteps((prevSteps) => {
-          const newSteps = prevSteps + 1;
-          updateMetrics(newSteps);
-          return newSteps;
+          if (mag > threshold && now - lastPeakRef.current > 350) {
+            lastPeakRef.current = now;
+
+            setSessionSteps((prev) => {
+              const next = prev + 1;
+              const absolute = baseStepsToday + next;
+              updateMetrics(absolute);
+              logToBackend(absolute);
+              return next;
+            });
+          }
         });
       }
-    });
+    };
 
-    return () => subscription.remove();
-  }, []); // subscribe once
+    startTracking();
+  }, [baseStepsToday]);
 
-
-  const updateMetrics = (stepCount) => {
+  const updateMetrics = (absolute) => {
     const stepLengthMeters = 0.78;
-    const meters = stepCount * stepLengthMeters;
+    const meters = absolute * stepLengthMeters;
     const miles = meters / 1609.34;
-
-    const caloriesBurned = stepCount * userWeight * 0.0005;
+    const caloriesBurned = absolute * userWeight * 0.0005;
 
     setDistance(miles);
     setCalories(caloriesBurned);
-
-    logToBackend(stepCount, miles, caloriesBurned);
   };
 
-  const logToBackend = async (stepsCount, distance, calories) => {
-    const userStr = await AsyncStorage.getItem("user");
-    if (!userStr) return;
-
-    const user = JSON.parse(userStr);
-    if (Platform.OS === "web") return;
-
+  const logToBackend = async (stepsCount) => {
     try {
-      // IMPORTANT: your .env already has /api, so DON'T add it again here
+      const userStr = await AsyncStorage.getItem("user");
+      if (!userStr) return;
+      const user = JSON.parse(userStr);
+
+      const miles = distance;
+      const caloriesBurned = calories;
+
       await fetch(`${process.env.EXPO_PUBLIC_API_URL}/steps/log`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user.id,
           stepsCount,
-          distance,
-          calories,
+          miles,
+          caloriesBurned,
         }),
       });
 
-      console.log("Sent step log →", { stepsCount, distance, calories });
+      console.log("Sent step log →", { stepsCount, miles, caloriesBurned });
     } catch (e) {
-      console.log("Failed to send:", e.message);
+      console.log("Backend log failed:", e.message);
     }
   };
 
   return {
     isAvailable,
-    steps,
+    steps: baseStepsToday === null ? 0 : baseStepsToday + sessionSteps,
     distance,
     calories,
-    accel,
-    magnitude,
-    threshold,
-    lastPeak: lastPeakRef.current,
   };
 }

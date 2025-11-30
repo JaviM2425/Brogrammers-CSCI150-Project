@@ -157,24 +157,21 @@ app.post("/api/recommendations", async (req, res) => {
   }
 });
 
-
-
-
 /* ===========================
-   POST: LOG A STEP RECORD
+   POST: LOG STEP RECORD
 =========================== */
 app.post("/api/steps/log", async (req, res) => {
   try {
     console.log("Incoming /api/steps/log:", req.body);
 
-    const { userId, stepsCount, distance, calories } = req.body;
+    const { userId, stepsCount, distance, calories, miles, caloriesBurned } = req.body;
 
     const newRecord = await prisma.stepRecord.create({
       data: {
         userID: userId,
         stepsCount,
-        distance,
-        calories,
+        distance: distance ?? miles ?? 0,
+        calories: calories ?? caloriesBurned ?? 0,
         date: new Date(),
       },
     });
@@ -188,25 +185,22 @@ app.post("/api/steps/log", async (req, res) => {
 });
 
 /* ===========================
-   GET: TODAY’S STEP SUMMARY
+   GET: TODAY’S STEPS
 =========================== */
 app.get('/api/steps/today', async (req, res) => {
   try {
     const { userId } = req.query;
-
-    if (!userId)
-      return res.status(400).json({ error: "userId is required" });
+    if (!userId) return res.status(400).json({ error: "userId is required" });
 
     const id = parseInt(userId, 10);
 
-    // Start of today
     const start = new Date();
     start.setHours(0, 0, 0, 0);
 
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // Fetch ALL records for today
+    // Fetch all records for today, oldest → newest
     const records = await prisma.stepRecord.findMany({
       where: {
         userID: id,
@@ -215,22 +209,24 @@ app.get('/api/steps/today', async (req, res) => {
       orderBy: { date: "asc" }
     });
 
-    // Sum all values for the day
-    const dailySummary = records.reduce(
-      (acc, r) => {
-        acc.steps += r.stepsCount;
-        acc.distance += r.distance || 0;
-        acc.calories += r.calories || 0;
-        return acc;
-      },
-      { steps: 0, distance: 0, calories: 0 }
-    );
+    if (!records.length) {
+      return res.json({
+        success: true,
+        steps: 0,
+        distance: 0,
+        calories: 0,
+      });
+    }
+
+    // Use latest record
+    const latest = records[records.length - 1];
 
     res.json({
       success: true,
-      ...dailySummary
+      steps: latest.stepsCount,
+      distance: latest.distance || 0,
+      calories: latest.calories || 0,
     });
-
   } catch (error) {
     console.error("Error fetching today’s steps:", error);
     res.status(500).json({ error: "Internal server error" });
