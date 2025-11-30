@@ -8,13 +8,15 @@ export function StepTrackerProvider({ children, user }) {
   const [initialBaseSteps, setInitialBaseSteps] = useState(null);
 
   useEffect(() => {
-    if (!user?.id) return;
+    if (!user?.id) {
+      setInitialBaseSteps(null);
+      return;
+    }
+    setInitialBaseSteps(null);
 
     const loadBackendSteps = async () => {
       try {
-        const res = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/steps/today?userId=${user.id}`
-        );
+        const res = await fetch(`${process.env.EXPO_PUBLIC_API_URL}/steps/today?userId=${user.id}`);
         const json = await res.json();
 
         const steps = json?.steps ?? 0;
@@ -32,8 +34,7 @@ export function StepTrackerProvider({ children, user }) {
 
     loadBackendSteps();
   }, [user]);
-
-  const tracker = useStepTracker(initialBaseSteps);
+  const tracker = useStepTracker(initialBaseSteps, user?.weight ?? 70);
 
   return (
     <StepTrackerContext.Provider value={tracker}>

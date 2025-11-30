@@ -3,8 +3,6 @@ import { Accelerometer } from "expo-sensors";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-let globalSubscription = null;
-
 export default function useStepTracker(initialBaseSteps, userWeight = 70) {
   const [isAvailable, setIsAvailable] = useState(false);
   const [baseStepsToday, setBaseStepsToday] = useState(null);
@@ -14,67 +12,92 @@ export default function useStepTracker(initialBaseSteps, userWeight = 70) {
 
   const threshold = 1.35;
   const lastPeakRef = useRef(Date.now());
+  const subscriptionRef = useRef(null);
+  const baseStepsRef = useRef(0);
+  const weightRef = useRef(userWeight);
+
+  useEffect(() => {
+    weightRef.current = userWeight || 70;
+  }, [userWeight]);
 
   useEffect(() => {
     if (initialBaseSteps === null) return;
 
     setBaseStepsToday(initialBaseSteps);
     setSessionSteps(0);
+    baseStepsRef.current = initialBaseSteps;
+    updateMetrics(initialBaseSteps, weightRef.current);
   }, [initialBaseSteps]);
+
+  useEffect(() => {
+    baseStepsRef.current = baseStepsToday ?? 0;
+  }, [baseStepsToday]);
 
   useEffect(() => {
     if (baseStepsToday === null) return;
     if (Platform.OS === "web") return;
 
+    let cancelled = false;
+
     const startTracking = async () => {
       const available = await Accelerometer.isAvailableAsync();
-      setIsAvailable(available);
+      if (!cancelled) setIsAvailable(available);
 
       if (!available) return;
 
       Accelerometer.setUpdateInterval(100);
 
-      if (!globalSubscription) {
-        globalSubscription = Accelerometer.addListener(({ x, y, z }) => {
-          const mag = Math.sqrt(x * x + y * y + z * z);
-          const now = Date.now();
+      subscriptionRef.current?.remove?.();
 
-          if (mag > threshold && now - lastPeakRef.current > 350) {
-            lastPeakRef.current = now;
+      subscriptionRef.current = Accelerometer.addListener(({ x, y, z }) => {
+        const mag = Math.sqrt(x * x + y * y + z * z);
+        const now = Date.now();
 
-            setSessionSteps((prev) => {
-              const next = prev + 1;
-              const absolute = baseStepsToday + next;
-              updateMetrics(absolute);
-              logToBackend(absolute);
-              return next;
-            });
-          }
-        });
-      }
+        if (mag > threshold && now - lastPeakRef.current > 350) {
+          lastPeakRef.current = now;
+
+          setSessionSteps((prev) => {
+            const next = prev + 1;
+            const absolute = baseStepsRef.current + next;
+            const metrics = updateMetrics(absolute, weightRef.current);
+            logToBackend(absolute, metrics);
+            return next;
+          });
+        }
+      });
     };
-
     startTracking();
+
+    return () => {
+      cancelled = true;
+      subscriptionRef.current?.remove?.();
+      subscriptionRef.current = null;
+    };
   }, [baseStepsToday]);
 
-  const updateMetrics = (absolute) => {
+  const computeMetrics = (absolute, weight) => {
     const stepLengthMeters = 0.78;
     const meters = absolute * stepLengthMeters;
     const miles = meters / 1609.34;
-    const caloriesBurned = absolute * userWeight * 0.0005;
-
-    setDistance(miles);
-    setCalories(caloriesBurned);
+    const caloriesBurned = absolute * (weight || 70) * 0.0005;
+    return { miles, caloriesBurned };
   };
 
-  const logToBackend = async (stepsCount) => {
+  const updateMetrics = (absolute, weight = weightRef.current) => {
+    const { miles, caloriesBurned } = computeMetrics(absolute, weight);
+    setDistance(miles);
+    setCalories(caloriesBurned);
+    return { miles, caloriesBurned };
+  };
+
+  const logToBackend = async (stepsCount, metricsOverride) => {
     try {
       const userStr = await AsyncStorage.getItem("user");
       if (!userStr) return;
       const user = JSON.parse(userStr);
 
-      const miles = distance;
-      const caloriesBurned = calories;
+      const { miles, caloriesBurned } =
+        metricsOverride || computeMetrics(stepsCount, weightRef.current);
 
       await fetch(`${process.env.EXPO_PUBLIC_API_URL}/steps/log`, {
         method: "POST",
@@ -82,12 +105,19 @@ export default function useStepTracker(initialBaseSteps, userWeight = 70) {
         body: JSON.stringify({
           userId: user.id,
           stepsCount,
+          distance: miles,
+          calories: caloriesBurned,
           miles,
           caloriesBurned,
         }),
       });
 
-      console.log("Sent step log →", { stepsCount, miles, caloriesBurned });
+      console.log("Sent step log", {
+        userId: user.id,
+        stepsCount,
+        miles,
+        caloriesBurned,
+      });
     } catch (e) {
       console.log("Backend log failed:", e.message);
     }
