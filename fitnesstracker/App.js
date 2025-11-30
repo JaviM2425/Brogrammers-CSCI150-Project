@@ -42,6 +42,14 @@ export default function App() {
     setLoggedIn(true);
   };
 
+  const updateUser = async (updates) => {
+    setUser((prev) => {
+      const next = { ...(prev || {}), ...updates };
+      AsyncStorage.setItem("user", JSON.stringify(next));
+      return next;
+    });
+  };
+
   const logout = async () => {
     await AsyncStorage.removeItem("user");
     setUser(null);
@@ -51,7 +59,7 @@ export default function App() {
   if (loading) return <></>;
 
   return (
-   <AuthContext.Provider value={{ loggedIn, login, logout }}>
+   <AuthContext.Provider value={{ loggedIn, login, logout, user, updateUser }}>
       <SafeAreaProvider>
         <StepTrackerProvider user={user}>
           <NavigationContainer>

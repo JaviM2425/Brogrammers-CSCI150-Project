@@ -34,7 +34,7 @@ export function StepTrackerProvider({ children, user }) {
 
     loadBackendSteps();
   }, [user]);
-  const tracker = useStepTracker(initialBaseSteps, user?.weight ?? 70);
+  const tracker = useStepTracker(initialBaseSteps, user?.weight ?? null);
 
   return (
     <StepTrackerContext.Provider value={tracker}>

@@ -3,12 +3,12 @@ import { Accelerometer } from "expo-sensors";
 import { Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-export default function useStepTracker(initialBaseSteps, userWeight = 70) {
+export default function useStepTracker(initialBaseSteps, userWeight = null) {
   const [isAvailable, setIsAvailable] = useState(false);
   const [baseStepsToday, setBaseStepsToday] = useState(null);
   const [sessionSteps, setSessionSteps] = useState(0);
   const [distance, setDistance] = useState(0);
-  const [calories, setCalories] = useState(0);
+  const [calories, setCalories] = useState(null);
 
   const threshold = 1.35;
   const lastPeakRef = useRef(Date.now());
@@ -17,7 +17,7 @@ export default function useStepTracker(initialBaseSteps, userWeight = 70) {
   const weightRef = useRef(userWeight);
 
   useEffect(() => {
-    weightRef.current = userWeight || 70;
+    weightRef.current = userWeight ?? null;
   }, [userWeight]);
 
   useEffect(() => {
@@ -79,15 +79,16 @@ export default function useStepTracker(initialBaseSteps, userWeight = 70) {
     const stepLengthMeters = 0.78;
     const meters = absolute * stepLengthMeters;
     const miles = meters / 1609.34;
-    const caloriesBurned = absolute * (weight || 70) * 0.0005;
-    return { miles, caloriesBurned };
+    const hasWeight = typeof weight === "number" && !Number.isNaN(weight);
+    const caloriesBurned = hasWeight ? absolute * weight * 0.0005 : null;
+    return { miles, caloriesBurned, hasWeight };
   };
 
   const updateMetrics = (absolute, weight = weightRef.current) => {
-    const { miles, caloriesBurned } = computeMetrics(absolute, weight);
+    const { miles, caloriesBurned, hasWeight } = computeMetrics(absolute, weight);
     setDistance(miles);
     setCalories(caloriesBurned);
-    return { miles, caloriesBurned };
+    return { miles, caloriesBurned, hasWeight };
   };
 
   const logToBackend = async (stepsCount, metricsOverride) => {
@@ -96,7 +97,7 @@ export default function useStepTracker(initialBaseSteps, userWeight = 70) {
       if (!userStr) return;
       const user = JSON.parse(userStr);
 
-      const { miles, caloriesBurned } =
+      const { miles, caloriesBurned, hasWeight } =
         metricsOverride || computeMetrics(stepsCount, weightRef.current);
 
       await fetch(`${process.env.EXPO_PUBLIC_API_URL}/steps/log`, {
@@ -106,9 +107,9 @@ export default function useStepTracker(initialBaseSteps, userWeight = 70) {
           userId: user.id,
           stepsCount,
           distance: miles,
-          calories: caloriesBurned,
+          calories: hasWeight ? caloriesBurned : null,
           miles,
-          caloriesBurned,
+          caloriesBurned: hasWeight ? caloriesBurned : null,
         }),
       });
 

@@ -94,6 +94,7 @@ app.post('/api/login', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
 //--------------------Workout manger----------------------------------------------
 app.post("/api/WorkoutLog", async (req, res) => {
     const { planName, exerciseName, sets, reps, weight, date, userID } = req.body;
@@ -125,6 +126,7 @@ app.post("/api/WorkoutLog", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
+
 //------------------------workout recommdentation----------------------------------
 app.post("/api/recommendations", async (req, res) => {
   const { planName, workoutType, description } = req.body;
@@ -170,8 +172,8 @@ app.post("/api/steps/log", async (req, res) => {
       data: {
         userID: userId,
         stepsCount,
-        distance: distance ?? miles ?? 0,
-        calories: calories ?? caloriesBurned ?? 0,
+        distance: distance ?? miles ?? null,
+        calories: calories ?? caloriesBurned ?? null,
         date: new Date(),
       },
     });
@@ -185,7 +187,40 @@ app.post("/api/steps/log", async (req, res) => {
 });
 
 /* ===========================
-   GET: TODAY’S STEPS
+   PUT: UPDATE HEIGHT/WEIGHT
+=========================== */
+app.put("/api/user/profile", async (req, res) => {
+  try {
+    const { userId, height, weight } = req.body;
+    if (!userId) return res.status(400).json({ error: "userId is required" });
+
+    const id = parseInt(userId, 10);
+    const data = {};
+    if (height !== undefined) data.height = height === null ? null : parseFloat(height);
+    if (weight !== undefined) data.weight = weight === null ? null : parseFloat(weight);
+
+    const updated = await prisma.user.update({
+      where: { userID: id },
+      data,
+    });
+
+    res.json({
+      success: true,
+      user: {
+        id: updated.userID,
+        username: updated.username,
+        height: updated.height,
+        weight: updated.weight,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+/* ===========================
+   GET: TODAY'S STEPS
 =========================== */
 app.get('/api/steps/today', async (req, res) => {
   try {
@@ -200,7 +235,7 @@ app.get('/api/steps/today', async (req, res) => {
     const end = new Date();
     end.setHours(23, 59, 59, 999);
 
-    // Fetch all records for today, oldest → newest
+    // Fetch all records for today, oldest + newest
     const records = await prisma.stepRecord.findMany({
       where: {
         userID: id,
@@ -228,7 +263,7 @@ app.get('/api/steps/today', async (req, res) => {
       calories: latest.calories || 0,
     });
   } catch (error) {
-    console.error("Error fetching today’s steps:", error);
+    console.error("Error fetching today's steps:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 });

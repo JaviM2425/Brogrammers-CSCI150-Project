@@ -11,6 +11,8 @@ export default function Home({ navigation }) {
   const { steps: liveSteps, distance, calories } = useStepTrackerContext();
   const [stepGoal] = useState(10000);
   const [loggedWorkouts] = useState(2);
+  const caloriesDisplay =
+    calories === null || calories === undefined ? "N/A" : calories.toFixed(1);
 
   const { width } = useWindowDimensions();
   const isWide = width >= 700;
@@ -88,7 +90,7 @@ export default function Home({ navigation }) {
                   <Text style={[styles.numLabel, { marginTop: 10 }]}>
                     Distance: {distance.toFixed(2)} miles
                   </Text>
-                  <Text style={styles.numLabel}>Calories: {calories.toFixed(1)}</Text>
+                  <Text style={styles.numLabel}>Calories: {caloriesDisplay}</Text>
                 </View>
               </View>
             </View>
