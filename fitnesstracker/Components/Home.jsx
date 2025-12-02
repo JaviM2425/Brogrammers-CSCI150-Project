@@ -6,15 +6,20 @@ import useStepTracker from "../src/hooks/useStepTracker";
 import Navbar from "./Navbar";
 
 export default function Home({ navigation }) {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api";
+
   const [user, setUser] = useState(null);
   const { steps, distance, calories } = useStepTracker();
   const [stepGoal] = useState(10000);
-  const [loggedWorkouts] = useState(2);
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState([]);
+  const [weeklyTotal, setWeeklyTotal] = useState(0);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyError, setWeeklyError] = useState(null);
 
   const { width } = useWindowDimensions();
   const isWide = width >= 700;
 
-  // --- Load logged-in user ---
+  // Load logged-in user
   useEffect(() => {
     const loadUser = async () => {
       const storedUser = await AsyncStorage.getItem("user");
@@ -25,7 +30,52 @@ export default function Home({ navigation }) {
     loadUser();
   }, []);
 
-  // Convert tracker steps → your UI logic
+  // Fetch weekly workouts when user is available
+  useEffect(() => {
+    const userId = user?.id ?? user?.userID;
+    if (!userId) return;
+
+    const fetchWeekly = async () => {
+      try {
+        setWeeklyLoading(true);
+        setWeeklyError(null);
+
+        const response = await fetch(`${API_URL}/WorkoutLog/weekly?userId=${userId}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to fetch weekly workouts");
+        }
+
+        const dayMap = {};
+        (data.days || []).forEach((d) => {
+          dayMap[d.date] = { count: d.count, items: d.items || [] };
+        });
+
+        const today = new Date();
+        const last7 = [];
+        for (let i = 6; i >= 0; i--) {
+          const day = new Date(today);
+          day.setDate(today.getDate() - i);
+          const key = day.toISOString().slice(0, 10);
+          const label = day.toLocaleDateString("en-US", { weekday: "short" });
+          const bucket = dayMap[key] || { count: 0, items: [] };
+          last7.push({ date: key, label, count: bucket.count, items: bucket.items });
+        }
+
+        setWeeklyWorkouts(last7);
+        setWeeklyTotal(data.totalWorkouts || 0);
+      } catch (err) {
+        setWeeklyError(err.message);
+      } finally {
+        setWeeklyLoading(false);
+      }
+    };
+
+    fetchWeekly();
+  }, [user, API_URL]);
+
+  // Convert tracker steps + your UI logic
   const stepsToday = steps ?? 0;
 
   const stepPercent = useMemo(() => {
@@ -100,13 +150,13 @@ export default function Home({ navigation }) {
                 <Text style={styles.cardLabel}>Workouts</Text>
               </View>
 
-              <Text style={styles.numValue}>{loggedWorkouts}</Text>
+              <Text style={styles.numValue}>{weeklyTotal}</Text>
               <Text style={styles.numLabel}>logged this week</Text>
             </View>
           </View>
         </View>
-      </ScrollView>
 
+      </ScrollView>
       <Navbar navigation={navigation} />
     </View>
   );

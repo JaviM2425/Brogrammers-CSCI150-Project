@@ -15,7 +15,7 @@ export default function useStepTracker(userWeight = 70) {
 
   const threshold = 1.35;
   const lastPeakRef = useRef(Date.now());
-/*
+
   useEffect(() => {
     // Check sensor availability
     Accelerometer.isAvailableAsync().then(setIsAvailable);
@@ -44,7 +44,7 @@ export default function useStepTracker(userWeight = 70) {
 
     return () => subscription.remove();
   }, []); // subscribe once
-*/
+
 
   const updateMetrics = (stepCount) => {
     const stepLengthMeters = 0.78;

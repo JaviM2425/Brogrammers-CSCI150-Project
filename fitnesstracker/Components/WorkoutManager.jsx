@@ -1,17 +1,28 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from "react-native";
 import { Picker } from "@react-native-picker/picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Navbar from './Navbar';
 import NavbarTop from "./NavbarTop";
 
 export default function WorkoutManager({ navigation }) {
-
+    const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api";
+    const [user, setUser] = useState(null);
     const [weight, setWeight] = useState('');
     const [reps, setReps] = useState('');
     const [sets, setSets] = useState('1');
     const [workoutName, setWorkoutName] = useState('');
     const [exerciseName, setExerciseName] = useState('');
     const [exercises, setExercises] = useState([]);
+
+    // Load logged-in user so we can attach the right userID to logs
+    useEffect(() => {
+        const loadUser = async () => {
+            const stored = await AsyncStorage.getItem("user");
+            if (stored) setUser(JSON.parse(stored));
+        };
+        loadUser();
+    }, []);
 
     const handleAddExercise = async () => {
 
@@ -20,8 +31,14 @@ export default function WorkoutManager({ navigation }) {
             return;
         }
 
+        const userId = user?.id ?? user?.userID;
+        if (!userId) {
+            alert("No user found. Please log in first.");
+            return;
+        }
+
         try {
-            const response = await fetch("http://localhost:5000/api/WorkoutLog", {
+            const response = await fetch(`${API_URL}/WorkoutLog`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -31,7 +48,7 @@ export default function WorkoutManager({ navigation }) {
                     reps: reps || null,
                     weight: weight || null,
                     date: new Date().toISOString(),
-                    userID: 1
+                    userID: userId
                 })
             });
 

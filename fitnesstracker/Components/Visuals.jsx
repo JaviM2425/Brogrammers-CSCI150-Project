@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView, Text } from 'react-native';
 import { Svg, Circle, Text as SvgText } from 'react-native-svg';
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import Navbar from './Navbar';
 
 // Simple Step Counter without SVG
@@ -126,25 +127,120 @@ export function WeeklyCaloriesTracker() {
 
 // Combined Demo Component
 export default function SimpleVisuals({ navigation}) {
+  const [user, setUser] = useState(null);
+  useEffect(() => {
+    const loadUser = async () => {
+      const stored = await AsyncStorage.getItem("user");
+      if (stored) setUser(JSON.parse(stored));
+    };
+    loadUser();
+  }, []);
+
   return (
-    <View style={{flex:1}}>
-    <ScrollView style={styles.container}>
-      <Text style={styles.title}>Fitness Visuals Test</Text>
-      
-      <View style={styles.section}>
-        <SimpleStepCounter steps={5564} goal={10000} />
+    <View style={{ flex: 1 }}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>Fitness Visuals Test</Text>
+        
+        <View style={styles.section}>
+          <SimpleStepCounter steps={5564} goal={10000} />
+        </View>
+
+        <View style={styles.section}>
+          <SimpleWeightChart />
+        </View>
+
+        <View style={styles.section}>
+          <WeeklyCaloriesTracker />
+        </View>
+
+        <View style={styles.section}>
+          <WeeklyWorkoutsPanel user={user} />
+        </View>
+
+      </ScrollView>
+      <Navbar navigation={navigation} />
+    </View>
+  );
+}
+
+// Weekly workouts panel (moved from Home)
+function WeeklyWorkoutsPanel({ user }) {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api";
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState([]);
+  const [weeklyTotal, setWeeklyTotal] = useState(0);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyError, setWeeklyError] = useState(null);
+
+  useEffect(() => {
+    const userId = user?.id ?? user?.userID;
+    if (!userId) return;
+
+    const fetchWeekly = async () => {
+      try {
+        setWeeklyLoading(true);
+        setWeeklyError(null);
+
+        const response = await fetch(`${API_URL}/WorkoutLog/weekly?userId=${userId}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to fetch weekly workouts");
+        }
+
+        const dayMap = {};
+        (data.days || []).forEach((d) => {
+          dayMap[d.date] = { count: d.count, items: d.items || [] };
+        });
+
+        const today = new Date();
+        const last7 = [];
+        for (let i = 6; i >= 0; i--) {
+          const day = new Date(today);
+          day.setDate(today.getDate() - i);
+          const key = day.toISOString().slice(0, 10);
+          const label = day.toLocaleDateString("en-US", { weekday: "short" });
+          const bucket = dayMap[key] || { count: 0, items: [] };
+          last7.push({ date: key, label, count: bucket.count, items: bucket.items });
+        }
+
+        setWeeklyWorkouts(last7);
+        setWeeklyTotal(data.totalWorkouts || 0);
+      } catch (err) {
+        setWeeklyError(err.message);
+      } finally {
+        setWeeklyLoading(false);
+      }
+    };
+
+    fetchWeekly();
+  }, [user, API_URL]);
+
+  return (
+    <View>
+      <View style={styles.weeklyHeader}>
+        <Text style={styles.chartTitle}>This Week’s Workouts ({weeklyTotal})</Text>
+        {weeklyLoading && <Text style={styles.smallChip}>Loading...</Text>}
+        {weeklyError && <Text style={styles.errorText}>{weeklyError}</Text>}
       </View>
 
-      <View style={styles.section}>
-        <SimpleWeightChart />
-      </View>
-
-      <View style={styles.section}>
-        <WeeklyCaloriesTracker />
-      </View>
-
-    </ScrollView>
-    <Navbar navigation={navigation} />
+      {weeklyWorkouts.every(d => d.count === 0) ? (
+        <Text style={styles.calorieValue}>No workouts logged this week.</Text>
+      ) : (
+        weeklyWorkouts.map((day) => (
+          <View key={day.date} style={{ marginBottom: 10 }}>
+            <Text style={styles.weekLabel}>{day.label} ({day.count})</Text>
+            {day.items.map((w) => (
+              <Text key={w.id} style={styles.calorieValue}>
+                {w.exerciseName} {w.sets && w.reps ? `- ${w.sets}x${w.reps}` : ""} {w.weight ? `${w.weight} lbs` : ""}
+              </Text>
+            ))}
+          </View>
+        ))
+      )}
     </View>
   );
 }
@@ -154,6 +250,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
     paddingTop: 50,
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   title: {
     fontSize: 24,
@@ -271,5 +370,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
     fontStyle: 'italic',
+  },
+  weeklyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  smallChip: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#DC2626',
+  },
+  weekLabel: {
+    fontSize: 12,
+    color: '#6B7280',
   },
 });
