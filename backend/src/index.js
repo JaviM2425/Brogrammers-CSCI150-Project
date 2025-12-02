@@ -139,15 +139,20 @@ app.get("/api/WorkoutLog/weekly", async (req, res) => {
             return res.status(400).json({ error: "userId is required" });
         }
 
+        // Current week window: Sunday (start) through Saturday (end)
         const today = new Date();
-        const start = new Date();
-        start.setDate(today.getDate() - 6); // include today + previous 6 days
+        const start = new Date(today);
         start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() - start.getDay()); // back to Sunday
+
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
 
         const workouts = await prisma.workoutLog.findMany({
             where: {
                 userID: id,
-                date: { gte: start }
+                date: { gte: start, lte: end }
             },
             orderBy: { date: "asc" }
         });

@@ -52,18 +52,23 @@ export default function Home({ navigation }) {
           dayMap[d.date] = { count: d.count, items: d.items || [] };
         });
 
+        // Build Sunday (start of current week) through Saturday
         const today = new Date();
-        const last7 = [];
-        for (let i = 6; i >= 0; i--) {
-          const day = new Date(today);
-          day.setDate(today.getDate() - i);
+        const startOfWeek = new Date(today);
+        startOfWeek.setHours(0, 0, 0, 0);
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+
+        const weekDays = [];
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(startOfWeek);
+          day.setDate(startOfWeek.getDate() + i);
           const key = day.toISOString().slice(0, 10);
           const label = day.toLocaleDateString("en-US", { weekday: "short" });
           const bucket = dayMap[key] || { count: 0, items: [] };
-          last7.push({ date: key, label, count: bucket.count, items: bucket.items });
+          weekDays.push({ date: key, label, count: bucket.count, items: bucket.items });
         }
 
-        setWeeklyWorkouts(last7);
+        setWeeklyWorkouts(weekDays);
         setWeeklyTotal(data.totalWorkouts || 0);
       } catch (err) {
         setWeeklyError(err.message);
