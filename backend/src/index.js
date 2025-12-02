@@ -98,7 +98,9 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-//--------------------Workout manger----------------------------------------------
+/* ===========================
+   Workout Manager 
+=========================== */
 app.post("/api/WorkoutLog", async (req, res) => {
     const { planName, exerciseName, sets, reps, weight, date, userID } = req.body;
 
@@ -126,6 +128,65 @@ app.post("/api/WorkoutLog", async (req, res) => {
     } catch (error) {
         console.error("Workout insert error:", error);
         res.status(500).json({ error: error.message });
+    }
+});
+
+/* ===========================
+   Weekly workouts
+=========================== */
+app.get("/api/WorkoutLog/weekly", async (req, res) => {
+    try {
+        const { userId } = req.query;
+        const id = parseInt(userId, 10);
+
+        if (!id) {
+            return res.status(400).json({ error: "userId is required" });
+        }
+
+        // Current week window: Sunday (start) through Saturday (end)
+        const today = new Date();
+        const start = new Date(today);
+        start.setHours(0, 0, 0, 0);
+        start.setDate(start.getDate() - start.getDay()); // back to Sunday
+
+        const end = new Date(start);
+        end.setDate(start.getDate() + 6);
+        end.setHours(23, 59, 59, 999);
+
+        const workouts = await prisma.workoutLog.findMany({
+            where: {
+                userID: id,
+                date: { gte: start, lte: end }
+            },
+            orderBy: { date: "asc" }
+        });
+
+        // group by date string YYYY-MM-DD
+        const byDay = workouts.reduce((acc, w) => {
+            const key = w.date.toISOString().slice(0, 10);
+            if (!acc[key]) acc[key] = { date: key, count: 0, items: [] };
+            acc[key].count += 1;
+            acc[key].items.push({
+                id: w.logID,
+                exerciseName: w.exerciseName,
+                planName: w.planName,
+                sets: w.sets,
+                reps: w.reps,
+                weight: w.weight
+            });
+            return acc;
+        }, {});
+
+        const response = Object.values(byDay).sort((a, b) => a.date.localeCompare(b.date));
+
+        res.json({
+            success: true,
+            totalWorkouts: workouts.length,
+            days: response
+        });
+    } catch (error) {
+        console.error("Weekly workouts error:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 

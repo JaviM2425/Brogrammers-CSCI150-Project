@@ -7,18 +7,22 @@ import { AuthContext } from "../App";
 import Navbar from "./Navbar";
 
 export default function Home({ navigation }) {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api";
+
   const [user, setUser] = useState(null);
   const { user: authUser } = useContext(AuthContext);
   const { steps: liveSteps, distance, calories } = useStepTrackerContext();
   const [stepGoal, setStepGoal] = useState(10000);
-  const [loggedWorkouts] = useState(2);
+  const [weeklyTotal, setWeeklyTotal] = useState(0);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyError, setWeeklyError] = useState(null);
   const caloriesDisplay =
     calories === null || calories === undefined ? "N/A" : calories.toFixed(1);
 
   const { width } = useWindowDimensions();
   const isWide = width >= 700;
 
-  // --- Load logged-in user ---
+  // Load logged-in user
   useEffect(() => {
     const loadUser = async () => {
       const storedUser = await AsyncStorage.getItem("user");
@@ -39,11 +43,40 @@ export default function Home({ navigation }) {
   }, [authUser]);
 
   useEffect(() => {
+    const userId = authUser?.id ?? user?.id ?? user?.userID;
+    if (!userId) return;
+
+    const fetchWeekly = async () => {
+      try {
+        setWeeklyLoading(true);
+        setWeeklyError(null);
+
+        const response = await fetch(`${API_URL}/WorkoutLog/weekly?userId=${userId}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to fetch weekly workouts");
+        }
+
+        setWeeklyTotal(data.totalWorkouts || 0);
+      } catch (err) {
+        setWeeklyError(err.message);
+      } finally {
+        setWeeklyLoading(false);
+      }
+    };
+
+    fetchWeekly();
+  }, [authUser, user, API_URL]);
+
+  useEffect(() => {
     if (!authUser && user?.stepGoal) {
       setStepGoal(user.stepGoal);
     }
   }, [user, authUser]);
-  const stepsToday = liveSteps;
+  const stepsToday = liveSteps ?? 0;
+  const distanceMiles =
+    distance === null || distance === undefined ? "0.00" : distance.toFixed(2);
   
   const stepPercent = useMemo(() => {
     if (!stepGoal || !stepsToday) return 0;
@@ -104,7 +137,7 @@ export default function Home({ navigation }) {
                   <Text style={styles.progressNote}>{Math.round(stepPercent * 100)}% of goal</Text>
 
                   <Text style={[styles.numLabel, { marginTop: 10 }]}>
-                    Distance: {distance.toFixed(2)} miles
+                    Distance: {distanceMiles} miles
                   </Text>
                   <Text style={styles.numLabel}>Calories: {caloriesDisplay}</Text>
                 </View>
@@ -117,13 +150,19 @@ export default function Home({ navigation }) {
                 <Text style={styles.cardLabel}>Workouts</Text>
               </View>
 
-              <Text style={styles.numValue}>{loggedWorkouts}</Text>
-              <Text style={styles.numLabel}>logged this week</Text>
+              <Text style={styles.numValue}>{weeklyTotal}</Text>
+              <Text style={styles.numLabel}>
+                {weeklyLoading
+                  ? "loading..."
+                  : weeklyError
+                  ? "could not load"
+                  : "logged this week"}
+              </Text>
             </View>
           </View>
         </View>
-      </ScrollView>
 
+      </ScrollView>
       <Navbar navigation={navigation} />
     </View>
   );

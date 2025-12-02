@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { View, StyleSheet, ScrollView, Text } from "react-native";
 import { Svg, Circle, Polyline } from "react-native-svg";
 import Navbar from "./Navbar";
@@ -183,7 +183,11 @@ export default function SimpleVisuals({ navigation }) {
 
   return (
     <View style={{ flex: 1 }}>
-      <ScrollView style={styles.container}>
+      <ScrollView
+        style={styles.container}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.title}>Fitness Visuals</Text>
 
         <StepCard steps={steps} goal={stepGoal} />
@@ -202,8 +206,98 @@ export default function SimpleVisuals({ navigation }) {
           valueFormatter={(v) => `${v} cal`}
           secondaryNote={weeklyRange || null}
         />
+
+        <View style={styles.section}>
+          <WeeklyWorkoutsPanel user={user} />
+        </View>
       </ScrollView>
       <Navbar navigation={navigation} />
+    </View>
+  );
+}
+
+// Weekly workouts panel (from Home)
+function WeeklyWorkoutsPanel({ user }) {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api";
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState([]);
+  const [weeklyTotal, setWeeklyTotal] = useState(0);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyError, setWeeklyError] = useState(null);
+
+  useEffect(() => {
+    const userId = user?.id ?? user?.userID;
+    if (!userId) return;
+
+    const fetchWeekly = async () => {
+      try {
+        setWeeklyLoading(true);
+        setWeeklyError(null);
+
+        const response = await fetch(`${API_URL}/WorkoutLog/weekly?userId=${userId}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to fetch weekly workouts");
+        }
+
+        const dayMap = {};
+        (data.days || []).forEach((d) => {
+          dayMap[d.date] = { count: d.count, items: d.items || [] };
+        });
+
+        // Build Sunday (start of current week) through Saturday
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setHours(0, 0, 0, 0);
+        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+
+        const weekDays = [];
+        for (let i = 0; i < 7; i++) {
+          const day = new Date(startOfWeek);
+          day.setDate(startOfWeek.getDate() + i);
+          const key = day.toISOString().slice(0, 10);
+          const label = day.toLocaleDateString("en-US", { weekday: "short" });
+          const bucket = dayMap[key] || { count: 0, items: [] };
+          weekDays.push({ date: key, label, count: bucket.count, items: bucket.items });
+        }
+
+        setWeeklyWorkouts(weekDays);
+        setWeeklyTotal(data.totalWorkouts || 0);
+      } catch (err) {
+        setWeeklyError(err.message);
+      } finally {
+        setWeeklyLoading(false);
+      }
+    };
+
+    fetchWeekly();
+  }, [user, API_URL]);
+
+  return (
+    <View>
+      <View style={styles.weeklyHeader}>
+        <Text style={styles.chartTitle}>This Week's Workouts ({weeklyTotal})</Text>
+        {weeklyLoading && <Text style={styles.smallChip}>Loading...</Text>}
+        {weeklyError && <Text style={styles.errorText}>{weeklyError}</Text>}
+      </View>
+
+      {weeklyWorkouts.every((d) => d.count === 0) ? (
+        <Text style={styles.calorieValue}>No workouts logged this week.</Text>
+      ) : (
+        weeklyWorkouts.map((day) => (
+          <View key={day.date} style={{ marginBottom: 10 }}>
+            <Text style={styles.weekLabel}>
+              {day.label} ({day.count})
+            </Text>
+            {day.items.map((w) => (
+              <Text key={w.id} style={styles.calorieValue}>
+                {w.exerciseName} {w.sets && w.reps ? `- ${w.sets}x${w.reps}` : ""}{" "}
+                {w.weight ? `${w.weight} lbs` : ""}
+              </Text>
+            ))}
+          </View>
+        ))
+      )}
     </View>
   );
 }
@@ -213,6 +307,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f5f5f5",
     paddingTop: 24,
+  },
+  scrollContent: {
+    paddingBottom: 24,
   },
   title: {
     fontSize: 24,
@@ -308,5 +405,27 @@ const styles = StyleSheet.create({
   emptyText: {
     textAlign: "center",
     color: "#666",
+  },
+  calorieValue: {
+    fontSize: 13,
+    color: "#333",
+  },
+  weeklyHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  smallChip: {
+    fontSize: 12,
+    color: '#6B7280',
+  },
+  errorText: {
+    fontSize: 12,
+    color: '#DC2626',
+  },
+  weekLabel: {
+    fontSize: 12,
+    color: '#6B7280',
   },
 });
