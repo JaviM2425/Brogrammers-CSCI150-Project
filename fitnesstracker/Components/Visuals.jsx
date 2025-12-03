@@ -34,7 +34,7 @@ const formatShortDate = (isoString) => {
   return `${parts.month}-${parts.day}`;
 };
 
-// Use raw YYYY-MM-DD strings (no timezone conversion) — step records are already Pacific-normalized.
+// Use raw YYYY-MM-DD strings 
 const formatShortDateRaw = (dateString) => {
   if (!dateString) return "";
   const parts = String(dateString).split("-");
@@ -194,7 +194,7 @@ export default function SimpleVisuals({ navigation }) {
         const res = await api.get(`/steps/weekly?userId=${user.id}`);
         const weeklyRaw = res.data?.weekly || [];
 
-        // Use server-provided dates directly (already Pacific-normalized)
+        // Use server-provided dates directly
         const weekly = weeklyRaw.sort((a, b) =>
           String(a.date).localeCompare(String(b.date))
         );
@@ -284,7 +284,7 @@ function WeeklyWorkoutsPanel({ user }) {
           dayMap[d.date] = { count: d.count, items: d.items || [] };
         });
 
-        // Build the week using the server-provided dates directly (already Pacific-normalized)
+        // Build the week using the server-provided dates directly 
         const sorted = [...(data.days || [])].sort((a, b) =>
           String(a.date).localeCompare(String(b.date))
         );
@@ -293,7 +293,7 @@ function WeeklyWorkoutsPanel({ user }) {
         const anchor = sorted[0]?.date || dateKey(new Date());
         const anchorDate = new Date(`${anchor}T00:00:00Z`);
         anchorDate.setUTCHours(0, 0, 0, 0);
-        anchorDate.setUTCDate(anchorDate.getUTCDate() - anchorDate.getUTCDay()); // Sunday
+        anchorDate.setUTCDate(anchorDate.getUTCDate() - anchorDate.getUTCDay()); 
 
         const weekDays = [];
         for (let i = 0; i < 7; i++) {
