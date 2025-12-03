@@ -6,20 +6,43 @@ import { useStepTrackerContext } from "../src/providers/StepTrackerProvider";
 import { AuthContext } from "../App";
 import api from "../src/api/client";
 
+const PACIFIC_TZ = "America/Los_Angeles";
+
+const toPacificParts = (isoString) => {
+  if (!isoString) return null;
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return null;
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: PACIFIC_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  });
+  const parts = fmt.formatToParts(date).reduce((acc, p) => {
+    if (p.type !== "literal") acc[p.type] = p.value;
+    return acc;
+  }, {});
+  return parts;
+};
+
+const pacificKeyFromDate = (dateObj = new Date()) =>
+  new Intl.DateTimeFormat("en-CA", {
+    timeZone: PACIFIC_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(dateObj);
+
 const formatShortDate = (isoString) => {
-  if (!isoString) return "";
-  const d = new Date(isoString);
-  if (Number.isNaN(d.getTime())) return String(isoString).slice(5, 10);
-  const month = `${d.getMonth() + 1}`.padStart(2, "0");
-  const day = `${d.getDate()}`.padStart(2, "0");
-  return `${month}-${day}`;
+  const parts = toPacificParts(isoString);
+  if (!parts) return String(isoString).slice(5, 10);
+  return `${parts.month}-${parts.day}`;
 };
 
 const formatDayAbbrev = (isoString) => {
-  if (!isoString) return "";
-  const d = new Date(isoString);
-  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return Number.isNaN(d.getTime()) ? "" : days[d.getDay()];
+  const parts = toPacificParts(isoString);
+  return parts?.weekday || "";
 };
 
 function StepCard({ steps, goal }) {
@@ -158,17 +181,36 @@ export default function SimpleVisuals({ navigation }) {
     const fetchWeekly = async () => {
       try {
         const res = await api.get(`/steps/weekly?userId=${user.id}`);
-        const weekly = (res.data?.weekly || []).sort(
-          (a, b) => new Date(a.date) - new Date(b.date)
-        );
-        const start = weekly[0]?.date;
-        const end = weekly[weekly.length - 1]?.date;
-        setWeeklyCalories(
-          weekly.map((d) => ({
-            label: formatDayAbbrev(d.date),
-            value: Math.round(d.calories || 0),
-          }))
-        );
+        const weeklyRaw = res.data?.weekly || [];
+
+        // Normalize to Pacific keys and ensure stable 7-day order (today back 6 days)
+        const todayPac = new Date();
+        const startPac = new Date(todayPac);
+        startPac.setDate(todayPac.getDate() - 6);
+        const ordered = [];
+        for (let i = 0; i < 7; i++) {
+          const d = new Date(startPac);
+          d.setDate(startPac.getDate() + i);
+          const key = pacificKeyFromDate(d);
+          ordered.push(key);
+        }
+
+        const map = {};
+        weeklyRaw.forEach((item) => {
+          const key = pacificKeyFromDate(new Date(item.date));
+          map[key] = item;
+        });
+
+        const normalized = ordered.map((key) => ({
+          key,
+          label: formatDayAbbrev(key),
+          value: Math.round(map[key]?.calories || 0),
+        }));
+
+        const start = normalized[0]?.key;
+        const end = normalized[normalized.length - 1]?.key;
+
+        setWeeklyCalories(normalized);
         setWeeklyRange(start && end ? `${formatShortDate(start)} - ${formatShortDate(end)}` : "");
       } catch (e) {
         console.log("Failed to load weekly steps", e.message);
@@ -245,18 +287,21 @@ function WeeklyWorkoutsPanel({ user }) {
           dayMap[d.date] = { count: d.count, items: d.items || [] };
         });
 
-        // Build Sunday (start of current week) through Saturday
+        // Build Sunday (start of current week) through Saturday in Pacific time
         const today = new Date();
-        const startOfWeek = new Date(today);
-        startOfWeek.setHours(0, 0, 0, 0);
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+        const pacificParts = toPacificParts(today.toISOString());
+        const pacificStart = pacificParts
+          ? new Date(Date.UTC(pacificParts.year, pacificParts.month - 1, pacificParts.day))
+          : new Date();
+        pacificStart.setUTCHours(0, 0, 0, 0);
+        pacificStart.setUTCDate(pacificStart.getUTCDate() - pacificStart.getUTCDay()); // Sunday
 
         const weekDays = [];
         for (let i = 0; i < 7; i++) {
-          const day = new Date(startOfWeek);
-          day.setDate(startOfWeek.getDate() + i);
-          const key = day.toISOString().slice(0, 10);
-          const label = day.toLocaleDateString("en-US", { weekday: "short" });
+          const day = new Date(pacificStart);
+          day.setUTCDate(pacificStart.getUTCDate() + i);
+          const key = pacificKeyFromDate(day);
+          const label = formatDayAbbrev(key);
           const bucket = dayMap[key] || { count: 0, items: [] };
           weekDays.push({ date: key, label, count: bucket.count, items: bucket.items });
         }
@@ -368,6 +413,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 12,
     color: "#111",
+  },
+  chartSubtitle: {
+    fontSize: 13,
+    color: "#4B5563",
+    textAlign: "center",
+    marginTop: -8,
+    marginBottom: 10,
   },
   lineChartBox: {
     alignItems: "center",

@@ -68,7 +68,7 @@ export default function WorkoutManager({ navigation }) {
             setExercises(prev => [
                 ...prev,
                 {
-                    id: data.id,
+                    id: data.logID ?? data.id ?? `${Date.now()}`,
                     exerciseName,
                     sets,
                     reps,
@@ -234,8 +234,8 @@ export default function WorkoutManager({ navigation }) {
                 {exercises.length === 0 ? (
                     <Text style={styles.emptyText}>No exercises yet</Text>
                 ) : (
-                    exercises.map(item => (
-                        <View key={item.id} style={styles.exerItem}>
+                    exercises.map((item, idx) => (
+                        <View key={item.id || `${item.exerciseName}-${idx}`} style={styles.exerItem}>
                             <Text style={styles.exerItemText}>
                                 {item.exerciseName} - {item.sets}x{item.reps} {item.weight ? `${item.weight} lbs` : ""}
                             </Text>
