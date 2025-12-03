@@ -1,7 +1,9 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, FlatList, Platform, StatusBar } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import NavbarTop from "./NavbarTop";
 import Navbar from './Navbar';
+import { AuthContext } from "../App";
 
 /**
  * WorkoutRecommendations
@@ -79,7 +81,21 @@ const PLANS = [
 ];
 
 export default function WorkoutRecommendations({ navigation }) {
+  const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:5000/api";
+  const { user: authUser } = useContext(AuthContext);
+  const [user, setUser] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+
+  // Pull a saved user from storage so we can attach the right userID to new logs
+  useEffect(() => {
+    const loadUser = async () => {
+      const stored = await AsyncStorage.getItem("user");
+      if (stored) setUser(JSON.parse(stored));
+    };
+    loadUser();
+  }, []);
+
+  const userId = useMemo(() => authUser?.id ?? user?.id ?? user?.userID, [authUser, user]);
 
   const renderPlan = ({ item }) => (
     <View style={styles.card}>
@@ -100,28 +116,31 @@ export default function WorkoutRecommendations({ navigation }) {
           style={[styles.button, styles.secondaryButton]}
           onPress={async () => {
             try {
-              for (const ex of item.exercises) {
-                const body = {
-                  planName: item.planName,
-                  exerciseName: ex.exerciseName,
-                  sets: parseRangeToNumber(ex.sets),
-                  reps: parseRangeToNumber(ex.reps),
-                  weight: parseRangeToNumber(ex.weight),
-                  date: new Date().toISOString(),
-                  userID: 1, // replace with logged-in user ID
-                };
+              if (!userId) {
+                alert("Please log in before adding workouts to your log.");
+                return;
+              }
+              //Get averge values from ranges and prepare request bodies
+              const requestBodies = item.exercises.map((ex) => ({
+                planName: item.planName,
+                exerciseName: ex.exerciseName,
+                sets: parseRangeToNumber(ex.sets),
+                reps: parseRangeToNumber(ex.reps),
+                weight: parseRangeToNumber(ex.weight),
+                date: new Date().toISOString(),
+                userID: userId,
+              }));
 
-                const response = await fetch("http://localhost:5000/api/WorkoutLog", {
+              for (const body of requestBodies) {
+                const response = await fetch(`${API_URL}/WorkoutLog`, {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
                   body: JSON.stringify(body),
                 });
 
-                if (!response.ok) {
-                  const data = await response.json();
-                  console.error("Failed:", data);
-                  alert("Failed to add workout to log.");
-                  return;
+                const data = await response.json();
+                if (!response.ok || data.error) {
+                  throw new Error(data.error || "Failed to add workout to log.");
                 }
               }
 
@@ -140,7 +159,7 @@ export default function WorkoutRecommendations({ navigation }) {
         <View style={styles.expandedBox}>
           {item.exercises.map((ex, idx) => (
             <Text key={idx} style={styles.expandedText}>
-              {ex.exerciseName} — Sets: {ex.sets}, Reps: {ex.reps}, Weight: {ex.weight ?? "Bodyweight"}
+              {ex.exerciseName} - Sets: {ex.sets}, Reps: {ex.reps}, Weight: {ex.weight ?? "Bodyweight"}
             </Text>
           ))}
         </View>
