@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, ScrollView, Alert } from "react-native";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Navbar from './Navbar';
@@ -14,6 +15,9 @@ export default function WorkoutManager({ navigation }) {
     const [workoutName, setWorkoutName] = useState('');
     const [exerciseName, setExerciseName] = useState('');
     const [exercises, setExercises] = useState([]);
+    const [selectedDate, setSelectedDate] = useState(new Date());
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [showTimePicker, setShowTimePicker] = useState(false);
 
     // Load logged-in user so we can attach the right userID to logs
     useEffect(() => {
@@ -23,6 +27,9 @@ export default function WorkoutManager({ navigation }) {
         };
         loadUser();
     }, []);
+
+    const formatDate = (d) => d.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+    const formatTime = (d) => d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
     const handleAddExercise = async () => {
 
@@ -38,6 +45,8 @@ export default function WorkoutManager({ navigation }) {
         }
 
         try {
+            const isoDate = selectedDate ? selectedDate.toISOString() : null;
+
             const response = await fetch(`${API_URL}/WorkoutLog`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -47,7 +56,7 @@ export default function WorkoutManager({ navigation }) {
                     sets: sets || null,
                     reps: reps || null,
                     weight: weight || null,
-                    date: new Date().toISOString(),
+                    date: isoDate,
                     userID: userId
                 })
             });
@@ -71,6 +80,8 @@ export default function WorkoutManager({ navigation }) {
             setExerciseName("");
             setWeight("");
             setReps("");
+            setSets("1");
+            setSelectedDate(new Date());
 
             alert("Workout added successfully!");
 
@@ -91,7 +102,7 @@ export default function WorkoutManager({ navigation }) {
                 <Text style={styles.inputLabel}>Workout</Text>
                 <TextInput
                     style={styles.textarea}
-                    placeholder="Enter workout name"
+                    placeholder="Enter workout plan name"
                     value={workoutName}
                     onChangeText={text => {
                         const name = text.replace(/[^a-zA-Z ]/g, '');
@@ -152,6 +163,54 @@ export default function WorkoutManager({ navigation }) {
                         ))}
                     </Picker>
                 </View>
+
+                {/* Date & Time */}
+                <View style={styles.datetimeRow}>
+                    <TouchableOpacity
+                        style={[styles.button, styles.datetimeButton]}
+                        onPress={() => setShowDatePicker(true)}
+                    >
+                        <Text style={styles.buttonText}>Date: {formatDate(selectedDate)}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.button, styles.datetimeButton]}
+                        onPress={() => setShowTimePicker(true)}
+                    >
+                        <Text style={styles.buttonText}>Time: {formatTime(selectedDate)}</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {showDatePicker && (
+                    <DateTimePicker
+                        value={selectedDate}
+                        mode="date"
+                        display="default"
+                        onChange={(_, date) => {
+                            setShowDatePicker(false);
+                            if (date) {
+                                const updated = new Date(selectedDate);
+                                updated.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+                                setSelectedDate(updated);
+                            }
+                        }}
+                    />
+                )}
+
+                {showTimePicker && (
+                    <DateTimePicker
+                        value={selectedDate}
+                        mode="time"
+                        display="default"
+                        onChange={(_, date) => {
+                            setShowTimePicker(false);
+                            if (date) {
+                                const updated = new Date(selectedDate);
+                                updated.setHours(date.getHours(), date.getMinutes(), 0, 0);
+                                setSelectedDate(updated);
+                            }
+                        }}
+                    />
+                )}
 
                 {/* Button */}
                 <TouchableOpacity
@@ -248,6 +307,22 @@ const styles = StyleSheet.create({
         color: '#333',
         alignSelf: 'flex-start',
         marginLeft: 35,
+    },
+    datetimeRow: {
+        width: "100%",
+        flexDirection: "row",
+        justifyContent: "center",
+        gap: 12,
+        marginBottom: 10,
+        paddingHorizontal: 16,
+    },
+    datetimeButton: {
+        flex: 1,
+        paddingVertical: 12,
+    },
+    datetimeField: {
+        flex: 1,
+        alignItems: "center",
     },
     exerContainer: {
         alignSelf: 'center',
