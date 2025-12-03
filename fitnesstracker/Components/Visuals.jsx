@@ -26,13 +26,7 @@ const toPacificParts = (isoString) => {
   return parts;
 };
 
-const pacificKeyFromDate = (dateObj = new Date()) =>
-  new Intl.DateTimeFormat("en-CA", {
-    timeZone: PACIFIC_TZ,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(dateObj);
+const dateKey = (dateObj = new Date()) => dateObj.toISOString().slice(0, 10);
 
 const formatShortDate = (isoString) => {
   const parts = toPacificParts(isoString);
@@ -40,9 +34,26 @@ const formatShortDate = (isoString) => {
   return `${parts.month}-${parts.day}`;
 };
 
-const formatDayAbbrev = (isoString) => {
-  const parts = toPacificParts(isoString);
-  return parts?.weekday || "";
+// Use raw YYYY-MM-DD strings (no timezone conversion) — step records are already Pacific-normalized.
+const formatShortDateRaw = (dateString) => {
+  if (!dateString) return "";
+  const parts = String(dateString).split("-");
+  if (parts.length >= 3) {
+    const [, m, d] = parts;
+    return `${m}-${d}`;
+  }
+  return String(dateString).slice(5, 10);
+};
+
+const formatDayAbbrevRaw = (dateString) => {
+  if (!dateString) return "";
+  const parts = String(dateString).split("-");
+  if (parts.length < 3) return "";
+  const [y, m, d] = parts.map((v) => parseInt(v, 10));
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return "";
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  return days[dt.getUTCDay()];
 };
 
 function StepCard({ steps, goal }) {
@@ -183,35 +194,21 @@ export default function SimpleVisuals({ navigation }) {
         const res = await api.get(`/steps/weekly?userId=${user.id}`);
         const weeklyRaw = res.data?.weekly || [];
 
-        // Normalize to Pacific keys and ensure stable 7-day order (today back 6 days)
-        const todayPac = new Date();
-        const startPac = new Date(todayPac);
-        startPac.setDate(todayPac.getDate() - 6);
-        const ordered = [];
-        for (let i = 0; i < 7; i++) {
-          const d = new Date(startPac);
-          d.setDate(startPac.getDate() + i);
-          const key = pacificKeyFromDate(d);
-          ordered.push(key);
-        }
-
-        const map = {};
-        weeklyRaw.forEach((item) => {
-          const key = pacificKeyFromDate(new Date(item.date));
-          map[key] = item;
-        });
-
-        const normalized = ordered.map((key) => ({
-          key,
-          label: formatDayAbbrev(key),
-          value: Math.round(map[key]?.calories || 0),
+        // Use server-provided dates directly (already Pacific-normalized)
+        const weekly = weeklyRaw.sort((a, b) =>
+          String(a.date).localeCompare(String(b.date))
+        );
+        const normalized = weekly.map((d) => ({
+          key: d.date,
+          label: formatDayAbbrevRaw(d.date),
+          value: Math.round(d.calories || 0),
         }));
 
-        const start = normalized[0]?.key;
-        const end = normalized[normalized.length - 1]?.key;
+        const start = weekly[0]?.date;
+        const end = weekly[weekly.length - 1]?.date;
 
         setWeeklyCalories(normalized);
-        setWeeklyRange(start && end ? `${formatShortDate(start)} - ${formatShortDate(end)}` : "");
+        setWeeklyRange(start && end ? `${formatShortDateRaw(start)} - ${formatShortDateRaw(end)}` : "");
       } catch (e) {
         console.log("Failed to load weekly steps", e.message);
       }
@@ -287,21 +284,23 @@ function WeeklyWorkoutsPanel({ user }) {
           dayMap[d.date] = { count: d.count, items: d.items || [] };
         });
 
-        // Build Sunday (start of current week) through Saturday in Pacific time
-        const today = new Date();
-        const pacificParts = toPacificParts(today.toISOString());
-        const pacificStart = pacificParts
-          ? new Date(Date.UTC(pacificParts.year, pacificParts.month - 1, pacificParts.day))
-          : new Date();
-        pacificStart.setUTCHours(0, 0, 0, 0);
-        pacificStart.setUTCDate(pacificStart.getUTCDate() - pacificStart.getUTCDay()); // Sunday
+        // Build the week using the server-provided dates directly (already Pacific-normalized)
+        const sorted = [...(data.days || [])].sort((a, b) =>
+          String(a.date).localeCompare(String(b.date))
+        );
+
+        // If no data, default to an empty 7-day array starting today
+        const anchor = sorted[0]?.date || dateKey(new Date());
+        const anchorDate = new Date(`${anchor}T00:00:00Z`);
+        anchorDate.setUTCHours(0, 0, 0, 0);
+        anchorDate.setUTCDate(anchorDate.getUTCDate() - anchorDate.getUTCDay()); // Sunday
 
         const weekDays = [];
         for (let i = 0; i < 7; i++) {
-          const day = new Date(pacificStart);
-          day.setUTCDate(pacificStart.getUTCDate() + i);
-          const key = pacificKeyFromDate(day);
-          const label = formatDayAbbrev(key);
+          const day = new Date(anchorDate);
+          day.setUTCDate(anchorDate.getUTCDate() + i);
+          const key = dateKey(day);
+          const label = formatDayAbbrevRaw(key);
           const bucket = dayMap[key] || { count: 0, items: [] };
           weekDays.push({ date: key, label, count: bucket.count, items: bucket.items });
         }
