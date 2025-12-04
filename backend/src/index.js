@@ -10,6 +10,39 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+const PACIFIC_TIME_ZONE = "America/Los_Angeles";
+
+// Normalize dates to Pacific time so all persisted timestamps align to PST/PDT.
+function toPacificDate(input = new Date()) {
+  const date = input instanceof Date ? input : new Date(input);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: PACIFIC_TIME_ZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+    hour12: false,
+  })
+    .formatToParts(date)
+    .reduce((acc, part) => {
+      if (part.type !== "literal") acc[part.type] = parseInt(part.value, 10);
+      return acc;
+    }, {});
+
+  return new Date(
+    Date.UTC(
+      parts.year,
+      parts.month - 1,
+      parts.day,
+      parts.hour,
+      parts.minute,
+      parts.second
+    )
+  );
+}
+
 /* ===========================
    TEST ROUTE
 =========================== */
@@ -118,7 +151,7 @@ app.post("/api/WorkoutLog", async (req, res) => {
                 sets: sets ? Number(sets) : null,
                 reps: reps ? Number(reps) : null,
                 weight: weight ? Number(weight) : null,
-                date: date ? new Date(date) : new Date(), 
+                date: date ? toPacificDate(date) : toPacificDate(), 
                 userID: userID
             }
         });
@@ -144,14 +177,14 @@ app.get("/api/WorkoutLog/weekly", async (req, res) => {
         }
 
         // Current week window: Sunday (start) through Saturday (end)
-        const today = new Date();
-        const start = new Date(today);
-        start.setHours(0, 0, 0, 0);
-        start.setDate(start.getDate() - start.getDay()); // back to Sunday
+        const today = toPacificDate();
+        const start = toPacificDate(today);
+        start.setUTCHours(0, 0, 0, 0);
+        start.setUTCDate(start.getUTCDate() - start.getUTCDay()); // back to Sunday
 
         const end = new Date(start);
-        end.setDate(start.getDate() + 6);
-        end.setHours(23, 59, 59, 999);
+        end.setUTCDate(start.getUTCDate() + 6);
+        end.setUTCHours(23, 59, 59, 999);
 
         const workouts = await prisma.workoutLog.findMany({
             where: {
@@ -186,6 +219,52 @@ app.get("/api/WorkoutLog/weekly", async (req, res) => {
         });
     } catch (error) {
         console.error("Weekly workouts error:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+/* ===========================
+   Today's workouts
+=========================== */
+app.get("/api/WorkoutLog/today", async (req, res) => {
+    try {
+        const { userId } = req.query;
+        const id = parseInt(userId, 10);
+
+        if (!id) {
+            return res.status(400).json({ error: "userId is required" });
+        }
+
+        const start = toPacificDate();
+        start.setUTCHours(0, 0, 0, 0);
+        const end = new Date(start);
+        end.setUTCHours(23, 59, 59, 999);
+
+        const workouts = await prisma.workoutLog.findMany({
+            where: {
+                userID: id,
+                date: { gte: start, lte: end }
+            },
+            orderBy: { date: "asc" }
+        });
+
+        const items = workouts.map((w) => ({
+            id: w.logID,
+            exerciseName: w.exerciseName,
+            planName: w.planName,
+            sets: w.sets,
+            reps: w.reps,
+            weight: w.weight,
+            date: w.date,
+        }));
+
+        res.json({
+            success: true,
+            count: workouts.length,
+            items,
+        });
+    } catch (error) {
+        console.error("Today's workouts error:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 });
@@ -237,7 +316,7 @@ app.post("/api/steps/log", async (req, res) => {
         stepsCount,
         distance: distance ?? miles ?? null,
         calories: calories ?? caloriesBurned ?? null,
-        date: new Date(),
+        date: toPacificDate(),
       },
     });
 
@@ -283,7 +362,7 @@ app.put("/api/user/profile", async (req, res) => {
         data: {
           userID: id,
           weight: parseFloat(weight),
-          date: new Date(),
+          date: toPacificDate(),
         },
       });
     }
@@ -366,10 +445,10 @@ app.get("/api/steps/weekly", async (req, res) => {
     if (!userId) return res.status(400).json({ error: "userId is required" });
 
     const id = parseInt(userId, 10);
-    const today = new Date();
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
-    start.setDate(today.getDate() - 6);
+    const today = toPacificDate();
+    const start = toPacificDate(today);
+    start.setUTCHours(0, 0, 0, 0);
+    start.setUTCDate(start.getUTCDate() - 6);
 
     const records = await prisma.stepRecord.findMany({
       where: {
@@ -383,7 +462,7 @@ app.get("/api/steps/weekly", async (req, res) => {
     const buckets = {};
     for (let i = 0; i < 7; i++) {
       const d = new Date(start);
-      d.setDate(start.getDate() + i);
+      d.setUTCDate(start.getUTCDate() + i);
       const key = d.toISOString().slice(0, 10);
       buckets[key] = { date: key, steps: 0, calories: 0 };
     }
@@ -416,11 +495,11 @@ app.get('/api/steps/today', async (req, res) => {
 
     const id = parseInt(userId, 10);
 
-    const start = new Date();
-    start.setHours(0, 0, 0, 0);
+    const start = toPacificDate();
+    start.setUTCHours(0, 0, 0, 0);
 
-    const end = new Date();
-    end.setHours(23, 59, 59, 999);
+    const end = new Date(start);
+    end.setUTCHours(23, 59, 59, 999);
 
     // Fetch all records for today, oldest + newest
     const records = await prisma.stepRecord.findMany({

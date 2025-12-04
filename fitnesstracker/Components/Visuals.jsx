@@ -6,20 +6,54 @@ import { useStepTrackerContext } from "../src/providers/StepTrackerProvider";
 import { AuthContext } from "../App";
 import api from "../src/api/client";
 
-const formatShortDate = (isoString) => {
-  if (!isoString) return "";
-  const d = new Date(isoString);
-  if (Number.isNaN(d.getTime())) return String(isoString).slice(5, 10);
-  const month = `${d.getMonth() + 1}`.padStart(2, "0");
-  const day = `${d.getDate()}`.padStart(2, "0");
-  return `${month}-${day}`;
+const PACIFIC_TZ = "America/Los_Angeles";
+
+const toPacificParts = (isoString) => {
+  if (!isoString) return null;
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return null;
+  const fmt = new Intl.DateTimeFormat("en-US", {
+    timeZone: PACIFIC_TZ,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    weekday: "short",
+  });
+  const parts = fmt.formatToParts(date).reduce((acc, p) => {
+    if (p.type !== "literal") acc[p.type] = p.value;
+    return acc;
+  }, {});
+  return parts;
 };
 
-const formatDayAbbrev = (isoString) => {
-  if (!isoString) return "";
-  const d = new Date(isoString);
+const dateKey = (dateObj = new Date()) => dateObj.toISOString().slice(0, 10);
+
+const formatShortDate = (isoString) => {
+  const parts = toPacificParts(isoString);
+  if (!parts) return String(isoString).slice(5, 10);
+  return `${parts.month}-${parts.day}`;
+};
+
+// Use raw YYYY-MM-DD strings 
+const formatShortDateRaw = (dateString) => {
+  if (!dateString) return "";
+  const parts = String(dateString).split("-");
+  if (parts.length >= 3) {
+    const [, m, d] = parts;
+    return `${m}-${d}`;
+  }
+  return String(dateString).slice(5, 10);
+};
+
+const formatDayAbbrevRaw = (dateString) => {
+  if (!dateString) return "";
+  const parts = String(dateString).split("-");
+  if (parts.length < 3) return "";
+  const [y, m, d] = parts.map((v) => parseInt(v, 10));
+  if (Number.isNaN(y) || Number.isNaN(m) || Number.isNaN(d)) return "";
+  const dt = new Date(Date.UTC(y, m - 1, d));
   const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  return Number.isNaN(d.getTime()) ? "" : days[d.getDay()];
+  return days[dt.getUTCDay()];
 };
 
 function StepCard({ steps, goal }) {
@@ -158,18 +192,23 @@ export default function SimpleVisuals({ navigation }) {
     const fetchWeekly = async () => {
       try {
         const res = await api.get(`/steps/weekly?userId=${user.id}`);
-        const weekly = (res.data?.weekly || []).sort(
-          (a, b) => new Date(a.date) - new Date(b.date)
+        const weeklyRaw = res.data?.weekly || [];
+
+        // Use server-provided dates directly
+        const weekly = weeklyRaw.sort((a, b) =>
+          String(a.date).localeCompare(String(b.date))
         );
+        const normalized = weekly.map((d) => ({
+          key: d.date,
+          label: formatDayAbbrevRaw(d.date),
+          value: Math.round(d.calories || 0),
+        }));
+
         const start = weekly[0]?.date;
         const end = weekly[weekly.length - 1]?.date;
-        setWeeklyCalories(
-          weekly.map((d) => ({
-            label: formatDayAbbrev(d.date),
-            value: Math.round(d.calories || 0),
-          }))
-        );
-        setWeeklyRange(start && end ? `${formatShortDate(start)} - ${formatShortDate(end)}` : "");
+
+        setWeeklyCalories(normalized);
+        setWeeklyRange(start && end ? `${formatShortDateRaw(start)} - ${formatShortDateRaw(end)}` : "");
       } catch (e) {
         console.log("Failed to load weekly steps", e.message);
       }
@@ -245,18 +284,23 @@ function WeeklyWorkoutsPanel({ user }) {
           dayMap[d.date] = { count: d.count, items: d.items || [] };
         });
 
-        // Build Sunday (start of current week) through Saturday
-        const today = new Date();
-        const startOfWeek = new Date(today);
-        startOfWeek.setHours(0, 0, 0, 0);
-        startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+        // Build the week using the server-provided dates directly 
+        const sorted = [...(data.days || [])].sort((a, b) =>
+          String(a.date).localeCompare(String(b.date))
+        );
+
+        // If no data, default to an empty 7-day array starting today
+        const anchor = sorted[0]?.date || dateKey(new Date());
+        const anchorDate = new Date(`${anchor}T00:00:00Z`);
+        anchorDate.setUTCHours(0, 0, 0, 0);
+        anchorDate.setUTCDate(anchorDate.getUTCDate() - anchorDate.getUTCDay()); 
 
         const weekDays = [];
         for (let i = 0; i < 7; i++) {
-          const day = new Date(startOfWeek);
-          day.setDate(startOfWeek.getDate() + i);
-          const key = day.toISOString().slice(0, 10);
-          const label = day.toLocaleDateString("en-US", { weekday: "short" });
+          const day = new Date(anchorDate);
+          day.setUTCDate(anchorDate.getUTCDate() + i);
+          const key = dateKey(day);
+          const label = formatDayAbbrevRaw(key);
           const bucket = dayMap[key] || { count: 0, items: [] };
           weekDays.push({ date: key, label, count: bucket.count, items: bucket.items });
         }
@@ -368,6 +412,13 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 12,
     color: "#111",
+  },
+  chartSubtitle: {
+    fontSize: 13,
+    color: "#4B5563",
+    textAlign: "center",
+    marginTop: -8,
+    marginBottom: 10,
   },
   lineChartBox: {
     alignItems: "center",

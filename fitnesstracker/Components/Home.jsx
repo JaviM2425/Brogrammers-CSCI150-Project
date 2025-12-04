@@ -16,6 +16,9 @@ export default function Home({ navigation }) {
   const [weeklyTotal, setWeeklyTotal] = useState(0);
   const [weeklyLoading, setWeeklyLoading] = useState(false);
   const [weeklyError, setWeeklyError] = useState(null);
+  const [todayWorkouts, setTodayWorkouts] = useState([]);
+  const [todayLoading, setTodayLoading] = useState(false);
+  const [todayError, setTodayError] = useState(null);
   const caloriesDisplay =
     calories === null || calories === undefined ? "N/A" : calories.toFixed(1);
 
@@ -66,7 +69,28 @@ export default function Home({ navigation }) {
       }
     };
 
+    const fetchToday = async () => {
+      try {
+        setTodayLoading(true);
+        setTodayError(null);
+
+        const response = await fetch(`${API_URL}/WorkoutLog/today?userId=${userId}`);
+        const data = await response.json();
+
+        if (!response.ok || !data.success) {
+          throw new Error(data.error || "Failed to fetch today's workouts");
+        }
+
+        setTodayWorkouts(data.items || []);
+      } catch (err) {
+        setTodayError(err.message);
+      } finally {
+        setTodayLoading(false);
+      }
+    };
+
     fetchWeekly();
+    fetchToday();
   }, [authUser, user, API_URL]);
 
   useEffect(() => {
@@ -147,7 +171,7 @@ export default function Home({ navigation }) {
             {/* WORKOUT CARD */}
             <View style={[styles.card, styles.flexCard]}>
               <View style={styles.cardHeader}>
-                <Text style={styles.cardLabel}>Workouts</Text>
+                <Text style={styles.cardLabel}>Exercises</Text>
               </View>
 
               <Text style={styles.numValue}>{weeklyTotal}</Text>
@@ -158,6 +182,27 @@ export default function Home({ navigation }) {
                   ? "could not load"
                   : "logged this week"}
               </Text>
+
+              <View style={styles.todayList}>
+                <Text style={styles.listTitle}>Today's Workouts</Text>
+                {todayLoading ? (
+                  <Text style={styles.listItemText}>Loading...</Text>
+                ) : todayError ? (
+                  <Text style={styles.listItemText}>Could not load today's workouts.</Text>
+                ) : todayWorkouts.length === 0 ? (
+                  <Text style={styles.listItemText}>No workouts logged today.</Text>
+                ) : (
+                  todayWorkouts.map((item) => (
+                    <View key={item.id || item.exerciseName} style={styles.listItem}>
+                      <Text style={styles.listItemText}>{item.exerciseName}</Text>
+                      <Text style={styles.listItemMeta}>
+                        {item.sets ? `${item.sets} x ${item.reps || "?"}` : "Logged"}
+                        {item.weight ? ` @ ${item.weight}` : ""}
+                      </Text>
+                    </View>
+                  ))
+                )}
+              </View>
             </View>
           </View>
         </View>
@@ -280,5 +325,33 @@ const styles = StyleSheet.create({
     marginTop: 4,
     color: "#6B7280",
     fontSize: 12,
+  },
+  todayList: {
+    marginTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: "#E5E7EB",
+    paddingTop: 10,
+    gap: 8,
+  },
+  listTitle: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: "#0F172A",
+  },
+  listItem: {
+    backgroundColor: "#F8FAFC",
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  listItemText: {
+    color: "#111827",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  listItemMeta: {
+    color: "#6B7280",
+    fontSize: 12,
+    marginTop: 2,
   },
 });
