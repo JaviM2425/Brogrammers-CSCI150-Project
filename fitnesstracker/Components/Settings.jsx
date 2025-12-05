@@ -243,14 +243,14 @@ export default function Settings({ navigation, route }) {
         <Text style={styles.title}>Edit Height & Weight</Text>
 
         <TextInput
-          placeholder="Height (cm)"
+          placeholder="Height (in)"
           keyboardType="numeric"
           style={styles.input}
           value={height}
           onChangeText={setHeight}
         />
         <TextInput
-          placeholder="Weight (kg)"
+          placeholder="Weight (lbs)"
           keyboardType="numeric"
           style={styles.input}
           value={weight}
